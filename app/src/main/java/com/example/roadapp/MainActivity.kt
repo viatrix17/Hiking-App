@@ -23,6 +23,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -47,6 +48,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.roadapp.ui.theme.RoadAppTheme
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.roadapp.ui.theme.BrickOrange
+import com.example.roadapp.ui.theme.DarkBrown
 import com.example.roadapp.viewmodel.RouteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +80,7 @@ class MainActivity : ComponentActivity() {
                                     color = Color.White )
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color(0xFF692d19),
+                                containerColor = DarkBrown,
                                 titleContentColor = Color.White,
                             ),
                             navigationIcon = {
@@ -177,7 +180,7 @@ fun PrimaryButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().padding(8.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Red,
+            containerColor = BrickOrange,
             contentColor = Color.White
         ),
         shape = RoundedCornerShape(12.dp),
@@ -192,23 +195,19 @@ fun ReturnButton (
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Button(
+    IconButton(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().padding(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Blue,
-            contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+        modifier = modifier,
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Wstecz"
+            contentDescription = "Wstecz",
+            tint = Color.White
         )
     }
 }
-//
+
+
 
 // TOP BAR MA POKAZYWAC NAJPIERW ZE TRASY GORSKIE A POTEM NAZWE PODSTRONY I OBOK TEGO PRZYCISK
 //@Composable
