@@ -14,6 +14,6 @@ interface ApiService {
     ): List<Post>
 
     // Możesz tu dopisać też funkcję pobierającą wszystko:
-    @GET("viatrix17/721e9293815e011950407b8d33adf1ae/raw/34a98ec44fc9c4a9a9e9be521cd9f9f659af6f24/routes.json")
+    @GET("viatrix17/721e9293815e011950407b8d33adf1ae/raw/fd6947ebc1992527e4e6f2a34f3b0800a694b46f/routes.json")
     suspend fun getAllPosts(): List<Post>
 }

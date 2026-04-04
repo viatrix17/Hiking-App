@@ -37,15 +37,13 @@ import com.example.roadapp.ui.theme.LightBeige
 @Composable
 fun RoutesList(data: List<Route>, onRouteSelected: (Route) -> Unit) {
     LazyVerticalGrid(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        columns = GridCells.Fixed(2),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize(),
+        columns = GridCells.Adaptive(minSize = 130.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(16.dp)
     ) {
-        items(data) { route ->
+        items(data, key = { it.name }) { route ->
             RouteCard(
                 route = route,
                 onClick = { onRouteSelected(route) }
