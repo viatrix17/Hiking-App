@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,7 @@ import com.example.roadapp.model.Route
 import com.example.roadapp.ui.theme.BrickOrange
 import com.example.roadapp.ui.theme.DarkBrown
 import com.example.roadapp.viewmodel.RouteViewModel
+import com.google.firebase.perf.util.Timer
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -141,7 +143,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
     val routes by viewModel.currentRoutes.collectAsState()
@@ -179,7 +180,10 @@ fun DetailsScreen(name: String, description: String, onBack: () -> Unit) {
             Text(name, style = MaterialTheme.typography.headlineMedium)
         }
         Text(description, style = MaterialTheme.typography.bodyMedium)
-
+        AppIconButton(
+            onClick = {/*dodać wywołanie timera*/},
+            icon=Icons.Default.Timer,
+            contentDescription = "Uruchom Timer")
     }
 }
 
@@ -283,41 +287,25 @@ fun ReturnButton (
     }
 }
 
-
-
-// TOP BAR MA POKAZYWAC NAJPIERW ZE TRASY GORSKIE A POTEM NAZWE PODSTRONY I OBOK TEGO PRZYCISK
-//@Composable
-//fun MainTabletScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
-//
-//}
-
-//@Composable
-//fun DetailsTabletScreen(name: String, description: String, onBack: () -> Unit) {
-//    Column(modifier = Modifier.fillMaxSize().padding(32.dp)) {
-//        Button(onClick = onBack) {
-//            Text("Powrót do menu")
-//        }
-//
-//        Text("Szczegóły trasy", style = MaterialTheme.typography.labelLarge)
-//        Text(name, style = MaterialTheme.typography.headlineMedium)
-//        Text(description, style = MaterialTheme.typography.bodyMedium)
-//
-//    }
-//}
-
-//@Composable
-//fun CounterScreen(viewModel: StoperViewModel = viewModel()) {
-//    // Pobranie aktualnej wartości ze StateFlow
-//    val count by viewModel.count.collectAsState()
-//    Column {
-//        // Wyświetlenie wartości licznika
-//        Text(text = "Licznik: $count")
-//        // Przycisk zwiększający licznik
-//        Button(onClick = { viewModel.increment() }) {
-//            Text("Dodaj")
-//        }
-//    }
-//}
+@Composable 
+fun AppIconButton (
+    onClick: () -> Unit,
+    icon: ImageVector,
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+    )
+    {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = Color.Black
+        )
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

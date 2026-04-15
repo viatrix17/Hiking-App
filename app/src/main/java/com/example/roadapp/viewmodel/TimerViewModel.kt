@@ -1,6 +1,8 @@
 package com.example.roadapp.viewmodel
 
-class TimerViewModel {
+import androidx.lifecycle.ViewModel
 
-    
+class TimerViewModel : ViewModel() {
+
+
 }
