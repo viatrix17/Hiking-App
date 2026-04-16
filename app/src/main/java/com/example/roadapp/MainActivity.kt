@@ -349,7 +349,8 @@ fun AppIconButton (
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = Color.Black
+            tint = if (enabled) Color.Black
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
         )
     }
 }
