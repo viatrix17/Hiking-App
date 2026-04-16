@@ -20,6 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
@@ -30,6 +33,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -76,6 +80,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+                val timerViewModel: TimerViewModel = viewModel()
 
                 val topBarTitle = when {
                     currentRoute == "home" -> "Trasy górskie w Polsce"
@@ -133,7 +138,6 @@ class MainActivity : ComponentActivity() {
                             val name = backStackEntry.arguments?.getString("name") ?: ""
 
                             val route = viewModel.getRouteByName(name)
-                            val timerViewModel: TimerViewModel = viewModel()
 
                             DetailsScreen(
                                 name = name,
@@ -192,17 +196,25 @@ fun DetailsScreen(name: String, description: String, onBack: () -> Unit, viewMod
             Text(name, style = MaterialTheme.typography.headlineMedium)
         }
         Text(description, style = MaterialTheme.typography.bodyMedium)
-        if (!isRunning) {
+        Row(modifier = Modifier.padding(all=8.dp))
+        {
+            if (!isRunning) {
+                AppIconButton(
+                    onClick = { viewModel.startTimer() },
+                    icon = Icons.Default.Timer,
+                    contentDescription = "Uruchom Timer"
+                )
+            } else {
+                AppIconButton(
+                    onClick = { viewModel.stopTimer() },
+                    icon = Icons.Default.Stop,
+                    contentDescription = "Uruchom Timer"
+                )
+            }
             AppIconButton(
-                onClick = { viewModel.startTimer() },
-                icon = Icons.Default.Timer,
-                contentDescription = "Uruchom Timer"
-            )
-        }else {
-            AppIconButton(
-                onClick = { viewModel.stopTimer() },
-                icon = Icons.Default.Stop,
-                contentDescription = "Uruchom Timer"
+                onClick = { viewModel.resetTimer() },
+                icon = Icons.Default.SettingsBackupRestore,
+                contentDescription = "Zresetuj timer"
             )
         }
         Text(

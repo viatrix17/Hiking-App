@@ -45,7 +45,8 @@ class TimerViewModel : ViewModel() {
     }
 
     fun resetTimer() {
-
+        _timerState.value = _timerState.value.copy(seconds = 0, minutes = 0, hours = 0, isRunning = false)
+        totalSeconds = 0
     }
 
     fun saveTime() { //baza danych
