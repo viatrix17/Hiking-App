@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -37,6 +39,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +61,8 @@ import com.example.roadapp.model.Route
 import com.example.roadapp.ui.theme.BrickOrange
 import com.example.roadapp.ui.theme.DarkBrown
 import com.example.roadapp.viewmodel.RouteViewModel
-import com.google.firebase.perf.util.Timer
+import com.example.roadapp.viewmodel.TimerViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -129,11 +133,13 @@ class MainActivity : ComponentActivity() {
                             val name = backStackEntry.arguments?.getString("name") ?: ""
 
                             val route = viewModel.getRouteByName(name)
+                            val timerViewModel: TimerViewModel = viewModel()
 
                             DetailsScreen(
                                 name = name,
                                 description = route?.description ?: "Brak opisu",
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                viewModel = timerViewModel
                             )
                         }
                     }
@@ -174,16 +180,36 @@ fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
         }
 }
 @Composable
-fun DetailsScreen(name: String, description: String, onBack: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(32.dp)) {
-        Row (modifier = Modifier.padding(8.dp)) {
+fun DetailsScreen(name: String, description: String, onBack: () -> Unit, viewModel: TimerViewModel) {
+
+    val timer by viewModel.timerState.collectAsState()
+    val isRunning by remember(timer) { derivedStateOf { timer.isRunning } }
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(32.dp)) {
+        Row(modifier = Modifier.padding(8.dp)) {
             Text(name, style = MaterialTheme.typography.headlineMedium)
         }
         Text(description, style = MaterialTheme.typography.bodyMedium)
-        AppIconButton(
-            onClick = {/*dodać wywołanie timera*/},
-            icon=Icons.Default.Timer,
-            contentDescription = "Uruchom Timer")
+        if (!isRunning) {
+            AppIconButton(
+                onClick = { viewModel.startTimer() },
+                icon = Icons.Default.Timer,
+                contentDescription = "Uruchom Timer"
+            )
+        }else {
+            AppIconButton(
+                onClick = { viewModel.stopTimer() },
+                icon = Icons.Default.Stop,
+                contentDescription = "Uruchom Timer"
+            )
+        }
+        Text(
+            text = String.format("%02d:%02d:%02d", timer.hours, timer.minutes, timer.seconds),
+            style = MaterialTheme.typography.displayMedium,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
     }
 }
 
@@ -217,8 +243,6 @@ fun TabletMainScreen(viewModel: RouteViewModel) {
                 )
             }
 
-            // KLUCZOWA ZMIANA: Wrapujemy RoutesList w Box z wagą 1f
-            // Dzięki temu lista zajmie całą przestrzeń od przycisków do dołu ekranu
             Box(modifier = Modifier.weight(1f)) {
                 RoutesList(
                     data = routes,
@@ -231,23 +255,23 @@ fun TabletMainScreen(viewModel: RouteViewModel) {
 
         VerticalDivider(thickness = 1.dp, color = Color.LightGray)
 
-        Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(32.dp)) {
-            val current = selectedRoute
-            if (current != null) {
-                DetailsScreen(
-                    name = current.name,
-                    description = current.description,
-                    onBack = {}
-                )
-            } else {
-                Text(
-                    text = "Wybierz trasę z listy",
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Gray
-                )
-            }
-        }
+//        Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(32.dp)) {
+//            val current = selectedRoute
+//            if (current != null) {
+//                DetailsScreen(
+//                    name = current.name,
+//                    description = current.description,
+//                    onBack = {}
+//                )
+//            } else {
+//                Text(
+//                    text = "Wybierz trasę z listy",
+//                    modifier = Modifier.align(Alignment.Center),
+//                    style = MaterialTheme.typography.bodyLarge,
+//                    color = Color.Gray
+//                )
+//            }
+//        }
     }
 }
 @Composable
@@ -258,7 +282,9 @@ fun PrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().padding(8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = BrickOrange,
             contentColor = Color.White
