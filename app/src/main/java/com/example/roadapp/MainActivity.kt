@@ -62,6 +62,7 @@ import com.example.roadapp.ui.theme.RoadAppTheme
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.roadapp.model.Route
+import com.example.roadapp.model.Timer
 import com.example.roadapp.ui.theme.BrickOrange
 import com.example.roadapp.ui.theme.DarkBrown
 import com.example.roadapp.viewmodel.RouteViewModel
@@ -186,8 +187,14 @@ fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
 @Composable
 fun DetailsScreen(name: String, description: String, onBack: () -> Unit, viewModel: TimerViewModel) {
 
-    val timer by viewModel.timerState.collectAsState()
-    val isRunning by remember(timer) { derivedStateOf { timer.isRunning } }
+    val timerMap by viewModel.timerStates.collectAsState()
+
+    // 2. Pobieramy nazwę aktywnej trasy, aby wiedzieć, czy ta konkretna działa
+    val activeRouteName by viewModel.activeRouteName.collectAsState()
+
+    val currentTimer = timerMap[name] ?: Timer(routeName = name)
+
+    val isThisRunning = (activeRouteName == name)
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -198,27 +205,27 @@ fun DetailsScreen(name: String, description: String, onBack: () -> Unit, viewMod
         Text(description, style = MaterialTheme.typography.bodyMedium)
         Row(modifier = Modifier.padding(all=8.dp))
         {
-            if (!isRunning) {
-                AppIconButton(
-                    onClick = { viewModel.startTimer() },
-                    icon = Icons.Default.Timer,
-                    contentDescription = "Uruchom Timer"
-                )
-            } else {
-                AppIconButton(
-                    onClick = { viewModel.stopTimer() },
-                    icon = Icons.Default.Stop,
-                    contentDescription = "Uruchom Timer"
-                )
-            }
+            val isAnyTimerRunning = activeRouteName != null
+            val isThisRunning = (activeRouteName == name)
+
             AppIconButton(
-                onClick = { viewModel.resetTimer() },
+                onClick = {
+                    if (isThisRunning) viewModel.stopTimer(name)
+                    else viewModel.startTimer(name)
+                },
+                icon = if (isThisRunning) Icons.Default.Stop else Icons.Default.Timer,
+                contentDescription = if (isThisRunning) "Zatrzymaj" else "Uruchom",
+                enabled = isThisRunning || !isAnyTimerRunning
+            )
+            AppIconButton(
+                onClick = { viewModel.resetTimer(name) },
                 icon = Icons.Default.SettingsBackupRestore,
-                contentDescription = "Zresetuj timer"
+                contentDescription = "Zresetuj timer",
+                enabled = !isAnyTimerRunning
             )
         }
         Text(
-            text = String.format("%02d:%02d:%02d", timer.hours, timer.minutes, timer.seconds),
+            text = String.format("%02d:%02d:%02d", currentTimer.hours, currentTimer.minutes, currentTimer.seconds),
             style = MaterialTheme.typography.displayMedium,
             modifier = Modifier.padding(vertical = 16.dp)
         )
@@ -330,11 +337,13 @@ fun AppIconButton (
     onClick: () -> Unit,
     icon: ImageVector,
     contentDescription: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     IconButton(
         onClick = onClick,
         modifier = modifier,
+        enabled = enabled,
     )
     {
         Icon(
