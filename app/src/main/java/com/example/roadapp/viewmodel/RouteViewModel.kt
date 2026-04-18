@@ -6,8 +6,11 @@ import com.example.roadapp.model.Route
 import com.example.roadapp.network.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -16,9 +19,27 @@ class RouteViewModel : ViewModel() {
     private var allBikeRoutesFromApi: List<Route> = emptyList()
     private var allHikingRoutesFromApi: List<Route> = emptyList()
 
+    private val _allRoutes = MutableStateFlow<List<Route>>(emptyList())
     private val _currentRoutes = MutableStateFlow<List<Route>>(emptyList())
     val currentRoutes: StateFlow<List<Route>> = _currentRoutes.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    val filteredRoutes = combine(_currentRoutes, _searchQuery, _allRoutes) { current, query, all ->
+        if (query.isNotEmpty()) {
+            all.filter { it.name.contains(query, ignoreCase = true) }
+        } else {
+            current
+        }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList())
+
+    fun onSearchQueryChange(newQuery: String) {
+        _searchQuery.value = newQuery
+    }
     fun loadFromGist() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -37,6 +58,7 @@ class RouteViewModel : ViewModel() {
                 withContext(Dispatchers.Main) {
                     allBikeRoutesFromApi = bikeRoutes
                     allHikingRoutesFromApi = hikingRoutes
+                    _allRoutes.value = bikeRoutes + hikingRoutes
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -46,10 +68,12 @@ class RouteViewModel : ViewModel() {
 
     fun selectBikeRoutes() {
         _currentRoutes.value = allBikeRoutesFromApi
+        _searchQuery.value = ""
     }
 
     fun selectHikingRoutes() {
         _currentRoutes.value = allHikingRoutesFromApi
+        _searchQuery.value = ""
     }
 
     fun getRouteByName(name: String): Route? {

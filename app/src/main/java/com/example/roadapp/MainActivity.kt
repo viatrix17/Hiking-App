@@ -20,11 +20,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
@@ -36,9 +39,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -53,6 +58,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -164,9 +171,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
-    val routes by viewModel.currentRoutes.collectAsState()
+//    val routes by viewModel.currentRoutes.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val filteredRoutes by viewModel.filteredRoutes.collectAsState()
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     LaunchedEffect(Unit) {
-        if(routes.isEmpty()) {
+        if(filteredRoutes.isEmpty()) {
             viewModel.loadFromGist()
         }
     }
@@ -174,30 +186,45 @@ fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            Row(modifier = Modifier.padding(8.dp)) {
-                PrimaryButton(
-                    "Trasy rowerowe",
-                    onClick = { viewModel.selectBikeRoutes()},
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                )
-                PrimaryButton(
-                    "Trasy piesze",
-                    onClick = { viewModel.selectHikingRoutes()},
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-
-                )
-            }
-            RoutesList(
-                data = routes,
-                onRouteSelected = { route ->
-                    onRouteSelected(route.name)
+        OutlinedTextField(
+            // 2. Używamy tutaj zmiennej z ViewModelu
+            value = searchQuery,
+            onValueChange = { viewModel.onSearchQueryChange(it) },
+            label = { Text("Wyszukaj trasę") },
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    keyboardController?.hide()
                 }
             )
+        )
+
+        Row(modifier = Modifier.padding(8.dp)) {
+            PrimaryButton(
+                "Trasy rowerowe",
+                onClick = { viewModel.selectBikeRoutes() },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            )
+            PrimaryButton(
+                "Trasy piesze",
+                onClick = { viewModel.selectHikingRoutes() },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+
+            )
         }
+        RoutesList(
+            data = filteredRoutes,
+            onRouteSelected = { route ->
+                onRouteSelected(route.name)
+            }
+        )
+    }
 }
 @Composable
 fun DetailsScreen(
