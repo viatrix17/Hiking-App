@@ -2,16 +2,24 @@ package com.example.roadapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.roadapp.data.RouteTime
+import com.example.roadapp.data.RouteTimeDao
+import com.example.roadapp.data.toEntity
+import com.example.roadapp.data.toTimer
+import com.example.roadapp.data.toUiModel
+import com.example.roadapp.model.RouteHistoryRecord
 import com.example.roadapp.model.Timer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-class TimerViewModel : ViewModel() {
+class TimerViewModel(private val dao: RouteTimeDao) : ViewModel() {
 
     private val _timerStates = MutableStateFlow<Map<String, Timer>>(emptyMap())
     val timerStates : StateFlow<Map<String, Timer>> = _timerStates.asStateFlow()
@@ -73,7 +81,16 @@ class TimerViewModel : ViewModel() {
         _timerStates.value = currentMap
     }
 
-    fun saveTime() { //baza danych
+    fun saveTime(timer: Timer) {
+        viewModelScope.launch {
+            val entity = timer.toEntity()
+            dao.insertRouteTime(entity)
+        }
+    }
 
+    fun getRouteTimes(name: String): Flow<List<RouteHistoryRecord>> {
+        return dao.getRouteTimesByName(name).map { list ->
+            list.map { it.toUiModel() }
+        }
     }
 }

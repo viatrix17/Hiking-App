@@ -5,13 +5,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,9 +22,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
@@ -29,21 +32,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -144,7 +143,7 @@ class MainActivity : ComponentActivity() {
                                 name = name,
                                 description = route?.description ?: "Brak opisu",
                                 onBack = { navController.popBackStack() },
-                                viewModel = timerViewModel
+                                viewModel = timerViewModel,
                             )
                         }
                     }
@@ -170,11 +169,18 @@ fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
                 PrimaryButton(
                     "Trasy rowerowe",
                     onClick = { viewModel.selectBikeRoutes()},
-                    modifier = Modifier.weight(1f))
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                )
                 PrimaryButton(
                     "Trasy piesze",
                     onClick = { viewModel.selectHikingRoutes()},
-                    modifier = Modifier.weight(1f))
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+
+                )
             }
             RoutesList(
                 data = routes,
@@ -185,29 +191,41 @@ fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
         }
 }
 @Composable
-fun DetailsScreen(name: String, description: String, onBack: () -> Unit, viewModel: TimerViewModel) {
+fun DetailsScreen(
+    name: String,
+    description: String,
+    onBack: () -> Unit,
+    viewModel: TimerViewModel,
+    formatTimestamp: (Long) -> Unit,
+    formatMillisToTime: (Long) -> Unit
+) {
 
     val timerMap by viewModel.timerStates.collectAsState()
-
-    // 2. Pobieramy nazwę aktywnej trasy, aby wiedzieć, czy ta konkretna działa
     val activeRouteName by viewModel.activeRouteName.collectAsState()
 
-    val currentTimer = timerMap[name] ?: Timer(routeName = name)
+    val history by viewModel.getRouteTimes(name).collectAsState(initial = emptyList())
+    var isHistoryExpanded by remember { mutableStateOf(false) }
 
+    val currentTimer = timerMap[name] ?: Timer(routeName = name)
+    val isAnyTimerRunning = activeRouteName != null
     val isThisRunning = (activeRouteName == name)
 
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(32.dp)) {
-        Row(modifier = Modifier.padding(8.dp)) {
-            Text(name, style = MaterialTheme.typography.headlineMedium)
-        }
-        Text(description, style = MaterialTheme.typography.bodyMedium)
+        Text(name, style = MaterialTheme.typography.headlineMedium)
+        Text(description, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = String.format("%02d:%02d:%02d", currentTimer.hours, currentTimer.minutes, currentTimer.seconds),
+            style = MaterialTheme.typography.displayMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+
         Row(modifier = Modifier.padding(all=8.dp))
         {
-            val isAnyTimerRunning = activeRouteName != null
-            val isThisRunning = (activeRouteName == name)
-
             AppIconButton(
                 onClick = {
                     if (isThisRunning) viewModel.stopTimer(name)
@@ -223,12 +241,42 @@ fun DetailsScreen(name: String, description: String, onBack: () -> Unit, viewMod
                 contentDescription = "Zresetuj timer",
                 enabled = !isAnyTimerRunning
             )
+            if (!isThisRunning && (currentTimer.hours > 0 || currentTimer.minutes > 0 || currentTimer.seconds > 0)) {
+                PrimaryButton(
+                    text = "Zapisz",
+                    onClick = {  },
+                    icon = Icons.Default.Save,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
         }
-        Text(
-            text = String.format("%02d:%02d:%02d", currentTimer.hours, currentTimer.minutes, currentTimer.seconds),
-            style = MaterialTheme.typography.displayMedium,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        TextButton(
+            onClick = { !isHistoryExpanded = isHistoryExpanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (isHistoryExpanded) "Ukryj historię" else "Pokaż historię")
+            Icon(
+                imageVector = if (isHistoryExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null
+            )
+        }
+        if (isHistoryExpanded) {
+            LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                items(history) { record ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(formatTimestamp(record.timestamp)) //
+                        Text(formatMillisToTime(record.durationInMillis)) //
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -253,12 +301,16 @@ fun TabletMainScreen(viewModel: RouteViewModel) {
                 PrimaryButton(
                     "Trasy rowerowe",
                     onClick = { viewModel.selectBikeRoutes() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
                 )
                 PrimaryButton(
                     "Trasy piesze",
                     onClick = { viewModel.selectHikingRoutes() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
                 )
             }
 
@@ -297,12 +349,12 @@ fun TabletMainScreen(viewModel: RouteViewModel) {
 fun PrimaryButton(
     text: String,
     onClick: () -> Unit,
+    icon: ImageVector? = null,
     modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
         modifier = modifier
-            .fillMaxWidth()
             .padding(8.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = BrickOrange,
@@ -311,6 +363,10 @@ fun PrimaryButton(
         shape = RoundedCornerShape(12.dp),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
     ) {
+        if (icon != null) {
+            Icon(imageVector = icon, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+        }
         Text(text = text, style = MaterialTheme.typography.labelLarge)
     }
 }
