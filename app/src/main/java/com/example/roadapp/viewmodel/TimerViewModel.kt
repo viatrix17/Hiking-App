@@ -26,7 +26,7 @@ class TimerViewModel(private val dao: RouteTimeDao) : ViewModel() {
 
     private val _activeRouteName = MutableStateFlow<String?>(null)
     val activeRouteName: StateFlow<String?> = _activeRouteName.asStateFlow()
-    private var totalSeconds = 0
+//    private var totalSeconds = 0
     private var timerJob: Job? = null
 
     fun startTimer(routeName: String) {
@@ -35,8 +35,10 @@ class TimerViewModel(private val dao: RouteTimeDao) : ViewModel() {
 
         _activeRouteName.value = routeName
 
-        timerJob = viewModelScope.launch() {
+        val currentTimer = _timerStates.value[routeName] ?: Timer(routeName = routeName)
+        var totalSeconds = (currentTimer.hours * 3600) + (currentTimer.minutes * 60) + currentTimer.seconds
 
+        timerJob = viewModelScope.launch() {
             while (isActive) {
                 delay(1000L)
 
@@ -51,9 +53,7 @@ class TimerViewModel(private val dao: RouteTimeDao) : ViewModel() {
                 val updatedTimer = Timer(seconds = s, minutes = m, hours = h, isRunning = true)
                 _timerStates.value = currentMap.toMutableMap().apply {
                     put(routeName, updatedTimer)
-
-
-            }
+                }
             }
         }
     }
@@ -74,8 +74,6 @@ class TimerViewModel(private val dao: RouteTimeDao) : ViewModel() {
     fun resetTimer(routeName: String) {
         stopTimer(routeName)
 
-        totalSeconds = 0
-
         val currentMap = _timerStates.value.toMutableMap()
         currentMap[routeName] = Timer(routeName = routeName, seconds = 0, minutes = 0, hours = 0, isRunning = false)
         _timerStates.value = currentMap
@@ -92,5 +90,16 @@ class TimerViewModel(private val dao: RouteTimeDao) : ViewModel() {
         return dao.getRouteTimesByName(name).map { list ->
             list.map { it.toUiModel() }
         }
+    }
+
+    fun discardUnsavedTimers(exceptRouteName: String) {
+        val newMap = _timerStates.value.toMutableMap()
+
+        newMap.keys.forEach { name ->
+            if (name != exceptRouteName) {
+                newMap[name] = Timer(routeName = name)
+            }
+        }
+        _timerStates.value = newMap
     }
 }

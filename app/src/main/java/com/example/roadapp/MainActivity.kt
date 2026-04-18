@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -216,6 +217,38 @@ fun DetailsScreen(
     val isAnyTimerRunning = activeRouteName != null
     val isThisRunning = (activeRouteName == name)
 
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+
+    val hasUnsavedTimers = timerMap.any { (routeName, timer) ->
+        routeName != name && (timer.hours > 0 || timer.minutes > 0 || timer.seconds > 0)
+    }
+
+    fun handleStartClick() {
+        if (hasUnsavedTimers) {
+            showConfirmationDialog = true
+        } else {
+            viewModel.startTimer(name)
+        }
+    }
+
+    if (showConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmationDialog = false },
+            title = { Text("Utrata danych") },
+            text = { Text("Posiadasz niezapisany czas w innej trasie. Jeśli zaczniesz tutaj, dane z poprzedniej trasy zostaną usunięte. Czy chcesz kontynuować?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.discardUnsavedTimers(exceptRouteName = name)
+                    viewModel.startTimer(name)
+                    showConfirmationDialog = false
+                }) { Text("Tak, zacznij nowy") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmationDialog = false }) { Text("Anuluj") }
+            }
+        )
+    }
+
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(32.dp)) {
@@ -235,7 +268,7 @@ fun DetailsScreen(
             AppIconButton(
                 onClick = {
                     if (isThisRunning) viewModel.stopTimer(name)
-                    else viewModel.startTimer(name)
+                    else handleStartClick()
                 },
                 icon = if (isThisRunning) Icons.Default.Stop else Icons.Default.Timer,
                 contentDescription = if (isThisRunning) "Zatrzymaj" else "Uruchom",
