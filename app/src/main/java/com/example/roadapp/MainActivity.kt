@@ -60,18 +60,24 @@ import androidx.navigation.compose.rememberNavController
 import com.example.roadapp.ui.theme.RoadAppTheme
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.roadapp.data.RoadAppDatabase
 import com.example.roadapp.model.Route
 import com.example.roadapp.model.Timer
 import com.example.roadapp.ui.theme.BrickOrange
 import com.example.roadapp.ui.theme.DarkBrown
 import com.example.roadapp.viewmodel.RouteViewModel
 import com.example.roadapp.viewmodel.TimerViewModel
+import com.example.roadapp.viewmodel.TimerViewModelFactory
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val database = RoadAppDatabase.getInstance(applicationContext)
+        val dao = database.routeTimeDao()
+        val factory = TimerViewModelFactory(dao)
+
         enableEdgeToEdge()
         setContent {
             val configuration = LocalConfiguration.current
@@ -80,7 +86,9 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
-                val timerViewModel: TimerViewModel = viewModel()
+                val timerViewModel: TimerViewModel = viewModel(
+                    factory = TimerViewModelFactory(dao) // Przekazujesz DAO do fabryki!
+                )
 
                 val topBarTitle = when {
                     currentRoute == "home" -> "Trasy górskie w Polsce"
@@ -196,8 +204,6 @@ fun DetailsScreen(
     description: String,
     onBack: () -> Unit,
     viewModel: TimerViewModel,
-    formatTimestamp: (Long) -> Unit,
-    formatMillisToTime: (Long) -> Unit
 ) {
 
     val timerMap by viewModel.timerStates.collectAsState()
@@ -255,7 +261,7 @@ fun DetailsScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         TextButton(
-            onClick = { !isHistoryExpanded = isHistoryExpanded },
+            onClick = { isHistoryExpanded = !isHistoryExpanded },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (isHistoryExpanded) "Ukryj historię" else "Pokaż historię")
@@ -265,14 +271,15 @@ fun DetailsScreen(
             )
         }
         if (isHistoryExpanded) {
-            LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+            LazyColumn {
                 items(history) { record ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(formatTimestamp(record.timestamp)) //
-                        Text(formatMillisToTime(record.durationInMillis)) //
+                    // record jest teraz typu RouteHistoryRecord
+                    // Masz dostęp do wszystkiego:
+                    Row {
+                        Text(text = record.formattedDate) // Gotowa data!
+                        Spacer(modifier = Modifier.width(16.dp))
+                        // Dostęp do timera i jego pól (godziny, minuty, sekundy)
+                        Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
                     }
                 }
             }

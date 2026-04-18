@@ -5,6 +5,6 @@ import androidx.room.*
 data class RouteTime(
     @PrimaryKey(autoGenerate = true) val uid: Int = 0, // unikalne ID (auto-generowane)
     val routeName: String,
-    val durationInMillis: Long,
-    val timestamp: Long
+    val durationInMillis: Long, // timer
+    val timestamp: Long // data
 )

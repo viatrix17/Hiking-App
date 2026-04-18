@@ -2,6 +2,7 @@ package com.example.roadapp.data
 
 import com.example.roadapp.model.RouteHistoryRecord
 import com.example.roadapp.model.Timer
+import com.example.roadapp.util.formatTimestamp
 
 fun Timer.toEntity(): RouteTime {
     val totalMillis = (hours.toLong() * 3_600_000L) +
@@ -32,7 +33,7 @@ fun RouteTime.toTimer(): Timer {
 fun RouteTime.toUiModel(): RouteHistoryRecord {
     return RouteHistoryRecord(
         timer = this.toTimer(),
-        formattedDate = formatTimestamp(this.timestamp), // Funkcja z Utils.kt
+        formattedDate = formatTimestamp(this.timestamp),
         rawTimestamp = this.timestamp
     )
 }
