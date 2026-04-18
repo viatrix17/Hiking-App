@@ -250,7 +250,9 @@ fun DetailsScreen(
             if (!isThisRunning && (currentTimer.hours > 0 || currentTimer.minutes > 0 || currentTimer.seconds > 0)) {
                 PrimaryButton(
                     text = "Zapisz",
-                    onClick = {  },
+                    onClick = {
+                        val timerToSave = currentTimer.copy(routeName = name)
+                        viewModel.saveTime(timerToSave) },
                     icon = Icons.Default.Save,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -271,15 +273,24 @@ fun DetailsScreen(
             )
         }
         if (isHistoryExpanded) {
-            LazyColumn {
-                items(history) { record ->
-                    // record jest teraz typu RouteHistoryRecord
-                    // Masz dostęp do wszystkiego:
-                    Row {
-                        Text(text = record.formattedDate) // Gotowa data!
-                        Spacer(modifier = Modifier.width(16.dp))
-                        // Dostęp do timera i jego pól (godziny, minuty, sekundy)
-                        Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
+            if (history.isEmpty()) {
+                Text(
+                    text = "Brak historii dla tej trasy",
+                    modifier = Modifier.padding(16.dp),
+                    color = Color.Gray
+                )}
+            else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    items(history) { record ->
+                        Row {
+                            Text(text = record.formattedDate)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
+                        }
                     }
                 }
             }

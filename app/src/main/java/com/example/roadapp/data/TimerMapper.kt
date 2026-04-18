@@ -5,6 +5,8 @@ import com.example.roadapp.model.Timer
 import com.example.roadapp.util.formatTimestamp
 
 fun Timer.toEntity(): RouteTime {
+    android.util.Log.d("DEBUG_ENTITY", "Mapuję timer dla trasy: '$routeName'")
+
     val totalMillis = (hours.toLong() * 3_600_000L) +
             (minutes.toLong() * 60_000L) +
             (seconds.toLong() * 1_000L)
