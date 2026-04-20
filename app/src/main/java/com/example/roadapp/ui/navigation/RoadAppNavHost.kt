@@ -11,6 +11,7 @@ import com.example.roadapp.ui.screens.TabletMainScreen
 import com.example.roadapp.viewmodel.RouteViewModel
 import com.example.roadapp.viewmodel.TimerViewModel
 import android.net.Uri
+import com.example.roadapp.ui.screens.WelcomeScreen
 
 @Composable
 fun RoadAppNavHost(
@@ -22,9 +23,16 @@ fun RoadAppNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = "home",
+        startDestination = "welcome",
         modifier = modifier
     ) {
+        composable("welcome") {
+            WelcomeScreen(onNavigateToHome = {
+                navController.navigate("home") {
+                    popUpTo("welcome") { inclusive = true }
+                }
+            })
+        }
         composable("home") {
             if (isTablet) {
                 TabletMainScreen(viewModel = viewModel)

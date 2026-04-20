@@ -112,25 +112,27 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        CenterAlignedTopAppBar(
-                            title = {
-                                Text(
-                                    text = topBarTitle,
-                                    color = Color.White )
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = DarkBrown,
-                                titleContentColor = Color.White,
-                            ),
-                            navigationIcon = {
-                                if (currentRoute != "home") {
-                                    ReturnButton(
-                                        onClick = {navController.popBackStack()},
-                                        modifier = Modifier.padding(8.dp))
+                        if (currentRoute != "welcome") {
+                            CenterAlignedTopAppBar(
+                                title = {
+                                    Text(
+                                        text = topBarTitle,
+                                        color = Color.White )
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = DarkBrown,
+                                    titleContentColor = Color.White,
+                                ),
+                                navigationIcon = {
+                                    if (currentRoute != "home") {
+                                        ReturnButton(
+                                            onClick = {navController.popBackStack()},
+                                            modifier = Modifier.padding(8.dp))
+                                    }
                                 }
-                            }
 
-                        )
+                            )
+                        }
                     }
                 ) { innerPadding ->
                     RoadAppNavHost(
