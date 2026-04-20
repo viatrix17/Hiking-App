@@ -30,7 +30,7 @@ private val DarkColorScheme = darkColorScheme(
     background = Maroon,
     surface = LightGray,
     onBackground = White,
-    onSurface = Black
+    onSurface = LightBeige
 )
 @Composable
 fun RoadAppTheme(

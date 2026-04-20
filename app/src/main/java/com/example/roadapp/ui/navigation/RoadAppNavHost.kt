@@ -54,6 +54,7 @@ fun RoadAppNavHost(
             DetailsScreen(
                 name = name,
                 description = route?.description ?: "Brak opisu",
+                id = route?.id ?: 0,
                 onBack = { navController.popBackStack() },
                 viewModel = timerViewModel,
             )

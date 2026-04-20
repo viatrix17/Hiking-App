@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.example.roadapp.RoutesList
 import com.example.roadapp.model.Route
 import com.example.roadapp.ui.components.PrimaryButton
 import com.example.roadapp.viewmodel.RouteViewModel
