@@ -93,7 +93,7 @@ fun DetailsScreen(
         .fillMaxSize()
         .padding(32.dp)) {
         Text(name, style = MaterialTheme.typography.headlineMedium)
-        Text(description, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -139,7 +139,9 @@ fun DetailsScreen(
             onClick = { isHistoryExpanded = !isHistoryExpanded },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isHistoryExpanded) "Ukryj historię" else "Pokaż historię")
+            Text(
+                if (isHistoryExpanded) "Ukryj historię" else "Pokaż historię",
+                color = MaterialTheme.colorScheme.onBackground)
             Icon(
                 imageVector = if (isHistoryExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = null
@@ -150,7 +152,7 @@ fun DetailsScreen(
                 Text(
                     text = "Brak historii dla tej trasy",
                     modifier = Modifier.padding(16.dp),
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onBackground
                 )}
             else {
                 LazyColumn(

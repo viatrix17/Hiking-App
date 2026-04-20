@@ -24,8 +24,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsBackupRestore
@@ -41,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -92,12 +95,14 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val configuration = LocalConfiguration.current
-            val isTablet = configuration.screenWidthDp >= 600
-
             val viewModel : RouteViewModel = viewModel()
             val timerViewModel: TimerViewModel = viewModel(factory = TimerViewModelFactory(dao))
-            RoadAppTheme {
+            var isDarkTheme by remember { mutableStateOf(false) }
+
+            RoadAppTheme(darkTheme = isDarkTheme) {
+                val configuration = LocalConfiguration.current
+                val isTablet = configuration.screenWidthDp >= 600
+
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
@@ -109,25 +114,37 @@ class MainActivity : ComponentActivity() {
 
                     else -> "Trasy górskie"
                 }
-                Scaffold(
+                Surface(
                     modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                Scaffold(
+                    containerColor = Color.Transparent,
                     topBar = {
                         if (currentRoute != "welcome") {
                             CenterAlignedTopAppBar(
                                 title = {
-                                    Text(
-                                        text = topBarTitle,
-                                        color = Color.White )
+                                    Text(text = topBarTitle)
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = DarkBrown,
-                                    titleContentColor = Color.White,
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
                                 ),
                                 navigationIcon = {
                                     if (currentRoute != "home") {
                                         ReturnButton(
-                                            onClick = {navController.popBackStack()},
-                                            modifier = Modifier.padding(8.dp))
+                                            onClick = { navController.popBackStack() },
+                                            modifier = Modifier.padding(8.dp)
+                                        )
+                                    }
+                                },
+                                actions = {
+                                    IconButton(onClick = { isDarkTheme = !isDarkTheme }) {
+                                        Icon(
+                                            imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                                            contentDescription = if (isDarkTheme) "Włącz tryb jasny" else "Włącz tryb ciemny",
+                                            tint = MaterialTheme.colorScheme.onPrimary
+                                        )
                                     }
                                 }
 
@@ -143,6 +160,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
+            }
             }
         }
     }

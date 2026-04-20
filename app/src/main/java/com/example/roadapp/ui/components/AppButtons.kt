@@ -31,8 +31,8 @@ fun PrimaryButton(
         modifier = modifier
             .padding(8.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = BrickOrange,
-            contentColor = Color.White
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
         ),
         shape = RoundedCornerShape(12.dp),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
@@ -57,7 +57,7 @@ fun ReturnButton (
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = "Wstecz",
-            tint = Color.White
+            tint = MaterialTheme.colorScheme.onPrimary
         )
     }
 }
@@ -79,7 +79,7 @@ fun AppIconButton (
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (enabled) Color.Black
+            tint = if (enabled) MaterialTheme.colorScheme.onBackground
             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
         )
     }

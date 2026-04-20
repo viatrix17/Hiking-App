@@ -51,7 +51,6 @@ fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
             .fillMaxSize()
     ) {
         OutlinedTextField(
-            // 2. Używamy tutaj zmiennej z ViewModelu
             value = searchQuery,
             onValueChange = { viewModel.onSearchQueryChange(it) },
             label = { Text("Wyszukaj trasę") },

@@ -2,15 +2,17 @@ package com.example.roadapp.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val Black = Color(0xFF000000)
+val White = Color(0xFFFFFFFF)
 
-
+// Light Mode
 val DarkBrown = Color(0xFF692D19)
 val BrickOrange = Color(0xFFD46C49)
 val LightBeige = Color(0xFFF5F5F5)
+
+// Dark Mode
+val Maroon = Color(0xFF432323)
+val Teal = Color(0xFF2F5755)
+val LightGray = Color(0xFFE0D9D9)
+val DarkTurquoise = Color(0xFF2F5755)
