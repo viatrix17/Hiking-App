@@ -1,5 +1,6 @@
 package com.example.roadapp
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -72,12 +76,14 @@ fun RouteCard(route: Route, onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-//            Icon(
-//                imageVector = if (route.type == "bike") Icons.Default.DirectionsBike else Icons.Default.Terrain,
-//                contentDescription = null,
-//                tint = DarkBrown,
-//                modifier = Modifier.size(40.dp)
-//            )
+            Image(
+                painter = painterResource(id = getRouteImageId(route.id)),
+                contentDescription = "Zdjęcie trasy ${route.name}",
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = route.name,
@@ -88,14 +94,4 @@ fun RouteCard(route: Route, onClick: () -> Unit) {
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RoutesListPreview() {
-    val testData = listOf(
-        Route("Testowa Trasa 1", "Opis 1"),
-        Route("Testowa Trasa 2", "Opis 2")
-    )
-    RoutesList(testData, onRouteSelected = {} )
 }

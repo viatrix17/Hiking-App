@@ -48,11 +48,11 @@ class RouteViewModel : ViewModel() {
 
                 val bikeRoutes = response
                     .filter { it.userId == 1 }
-                    .map { Route(it.title, it.description) }
+                    .map { Route(it.id,it.title, it.description) }
 
                 val hikingRoutes = response
                     .filter { it.userId == 2 }
-                    .map { Route(it.title, it.description) }
+                    .map { Route(it.id, it.title, it.description) }
 
                 // main thread
                 withContext(Dispatchers.Main) {
