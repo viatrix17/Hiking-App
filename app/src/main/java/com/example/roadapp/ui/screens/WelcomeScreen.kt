@@ -1,5 +1,11 @@
 package com.example.roadapp.ui.screens
 
+import android.content.Context
+import android.content.res.Configuration
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Animation
 import androidx.compose.animation.core.Spring
@@ -21,6 +27,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +41,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.roadapp.R
@@ -42,8 +51,34 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun WelcomeScreen(onNavigateToHome: () -> Unit) {
-    var isLogoVisible by remember { mutableStateOf(false) }
-    var isTextVisible by remember { mutableStateOf(false) }
+    var sensorValue by remember { mutableStateOf(0f) }
+    val context = LocalContext.current
+    val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
+
+    val configuration = LocalConfiguration.current
+
+    DisposableEffect(configuration) {
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent?) {
+
+                if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+                    val rawValue = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        event.values[1]
+                    } else {
+                        event.values[0]
+                    }
+                    sensorValue = (sensorValue * 0.8f) + (rawValue * 0.2f)
+                }
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+
+        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+        onDispose{
+            sensorManager.unregisterListener(listener)
+        }
+    }
 
     val scale = remember { Animatable(0f) }
     val rotation = remember { Animatable(0f) }
@@ -66,10 +101,13 @@ fun WelcomeScreen(onNavigateToHome: () -> Unit) {
         logoAlpha.animateTo(targetValue = 1f, animationSpec = tween(1000))
         textAlpha.animateTo(targetValue = 1f, animationSpec = tween(1000))
 
-        delay(2000)
+        delay(3000)
         onNavigateToHome()
     }
 
+    val tilt = (sensorValue * 3f).coerceIn(-20f, 20f)
+
+    val finalRotation = rotation.value + tilt
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -80,7 +118,7 @@ fun WelcomeScreen(onNavigateToHome: () -> Unit) {
             contentDescription = "Rysunek gór",
             modifier = Modifier
                 .scale(scale.value)
-                .rotate(rotation.value)
+                .rotate(finalRotation)
                 .alpha(logoAlpha.value)
                 .fillMaxWidth(0.5f)
                 .wrapContentHeight()
