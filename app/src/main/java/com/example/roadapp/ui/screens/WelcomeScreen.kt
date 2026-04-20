@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Animation
 import androidx.compose.animation.core.Spring
@@ -56,24 +57,31 @@ fun WelcomeScreen(onNavigateToHome: () -> Unit) {
     val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
 
     val configuration = LocalConfiguration.current
+    val windowManager = remember { context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager }
 
     DisposableEffect(configuration) {
         val listener = object : SensorEventListener {
+            @Suppress("DEPRECATION")
             override fun onSensorChanged(event: SensorEvent?) {
-
-                if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-                    val rawValue = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        event.values[1]
-                    } else {
-                        event.values[0]
+                val rotation = windowManager.defaultDisplay.rotation
+                if (event?.sensor?.type == Sensor.TYPE_LINEAR_ACCELERATION) {
+                    val rawValue = when (rotation) {
+                        android.view.Surface.ROTATION_0   ->  event.values[0]          // X
+                        android.view.Surface.ROTATION_90  -> -event.values[1]          // -Y
+                        android.view.Surface.ROTATION_180 -> -event.values[0]          // -X
+                        android.view.Surface.ROTATION_270 ->  event.values[1]          // Y
+                        else -> event.values[0]
                     }
+
+                    Log.d("SensorDebug", "Rotacja: $rotation, Wartość: $rawValue")
+
                     sensorValue = (sensorValue * 0.8f) + (rawValue * 0.2f)
                 }
             }
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
         sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
         onDispose{
             sensorManager.unregisterListener(listener)
