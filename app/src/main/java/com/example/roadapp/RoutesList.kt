@@ -61,7 +61,7 @@ fun RouteCard(route: Route, onClick: () -> Unit) {
             .aspectRatio(1f),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = LightBeige
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -82,7 +82,7 @@ fun RouteCard(route: Route, onClick: () -> Unit) {
             Text(
                 text = route.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = DarkBrown,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 maxLines = 2
             )
