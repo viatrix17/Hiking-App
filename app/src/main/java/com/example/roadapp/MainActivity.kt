@@ -71,6 +71,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.roadapp.data.RoadAppDatabase
 import com.example.roadapp.model.Route
 import com.example.roadapp.model.Timer
+import com.example.roadapp.ui.components.AppIconButton
+import com.example.roadapp.ui.components.PrimaryButton
+import com.example.roadapp.ui.components.ReturnButton
+import com.example.roadapp.ui.navigation.RoadAppNavHost
 import com.example.roadapp.ui.theme.BrickOrange
 import com.example.roadapp.ui.theme.DarkBrown
 import com.example.roadapp.viewmodel.RouteViewModel
@@ -90,13 +94,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             val configuration = LocalConfiguration.current
             val isTablet = configuration.screenWidthDp >= 600
+
+            val viewModel : RouteViewModel = viewModel()
+            val timerViewModel: TimerViewModel = viewModel(factory = TimerViewModelFactory(dao))
             RoadAppTheme {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
-                val timerViewModel: TimerViewModel = viewModel(
-                    factory = TimerViewModelFactory(dao) // Przekazujesz DAO do fabryki!
-                )
 
                 val topBarTitle = when {
                     currentRoute == "home" -> "Trasy górskie w Polsce"
@@ -129,363 +133,16 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    val viewModel : RouteViewModel = viewModel()
-
-                    NavHost(
+                    RoadAppNavHost(
                         navController = navController,
-                        startDestination = "home",
+                        isTablet = isTablet,
+                        viewModel = viewModel,
+                        timerViewModel = timerViewModel,
                         modifier = Modifier.padding(innerPadding)
-                    ) {
-
-                        composable("home") {
-                            if (isTablet) {
-                                TabletMainScreen(viewModel = viewModel)
-                            } else {
-                                MainScreen(
-                                    viewModel = viewModel,
-                                    onRouteSelected = { routeName ->
-                                        val encodedName = Uri.encode(routeName)
-                                        navController.navigate("details/$encodedName")
-                                    }
-                                )
-                            }
-                        }
-                        composable("details/{name}") { backStackEntry ->
-                            val name = backStackEntry.arguments?.getString("name") ?: ""
-
-                            val route = viewModel.getRouteByName(name)
-
-                            DetailsScreen(
-                                name = name,
-                                description = route?.description ?: "Brak opisu",
-                                onBack = { navController.popBackStack() },
-                                viewModel = timerViewModel,
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun MainScreen(onRouteSelected: (String) -> Unit, viewModel: RouteViewModel) {
-//    val routes by viewModel.currentRoutes.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val filteredRoutes by viewModel.filteredRoutes.collectAsState()
-
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    LaunchedEffect(Unit) {
-        if(filteredRoutes.isEmpty()) {
-            viewModel.loadFromGist()
-        }
-    }
-    Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-        OutlinedTextField(
-            // 2. Używamy tutaj zmiennej z ViewModelu
-            value = searchQuery,
-            onValueChange = { viewModel.onSearchQueryChange(it) },
-            label = { Text("Wyszukaj trasę") },
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    keyboardController?.hide()
-                }
-            )
-        )
-
-        Row(modifier = Modifier.padding(8.dp)) {
-            PrimaryButton(
-                "Trasy rowerowe",
-                onClick = { viewModel.selectBikeRoutes() },
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            )
-            PrimaryButton(
-                "Trasy piesze",
-                onClick = { viewModel.selectHikingRoutes() },
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-
-            )
-        }
-        RoutesList(
-            data = filteredRoutes,
-            onRouteSelected = { route ->
-                onRouteSelected(route.name)
-            }
-        )
-    }
-}
-@Composable
-fun DetailsScreen(
-    name: String,
-    description: String,
-    onBack: () -> Unit,
-    viewModel: TimerViewModel,
-) {
-
-    val timerMap by viewModel.timerStates.collectAsState()
-    val activeRouteName by viewModel.activeRouteName.collectAsState()
-
-    val history by viewModel.getRouteTimes(name).collectAsState(initial = emptyList())
-    var isHistoryExpanded by remember { mutableStateOf(false) }
-
-    val currentTimer = timerMap[name] ?: Timer(routeName = name)
-    val isAnyTimerRunning = activeRouteName != null
-    val isThisRunning = (activeRouteName == name)
-
-    var showConfirmationDialog by remember { mutableStateOf(false) }
-
-    val hasUnsavedTimers = timerMap.any { (routeName, timer) ->
-        routeName != name && (timer.hours > 0 || timer.minutes > 0 || timer.seconds > 0)
-    }
-
-    fun handleStartClick() {
-        if (hasUnsavedTimers) {
-            showConfirmationDialog = true
-        } else {
-            viewModel.startTimer(name)
-        }
-    }
-
-    if (showConfirmationDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmationDialog = false },
-            title = { Text("Utrata danych") },
-            text = { Text("Posiadasz niezapisany czas w innej trasie. Jeśli zaczniesz tutaj, dane z poprzedniej trasy zostaną usunięte. Czy chcesz kontynuować?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.discardUnsavedTimers(exceptRouteName = name)
-                    viewModel.startTimer(name)
-                    showConfirmationDialog = false
-                }) { Text("Tak, zacznij nowy") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmationDialog = false }) { Text("Anuluj") }
-            }
-        )
-    }
-
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(32.dp)) {
-        Text(name, style = MaterialTheme.typography.headlineMedium)
-        Text(description, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = String.format("%02d:%02d:%02d", currentTimer.hours, currentTimer.minutes, currentTimer.seconds),
-            style = MaterialTheme.typography.displayMedium,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Row(modifier = Modifier.padding(all=8.dp))
-        {
-            AppIconButton(
-                onClick = {
-                    if (isThisRunning) viewModel.stopTimer(name)
-                    else handleStartClick()
-                },
-                icon = if (isThisRunning) Icons.Default.Stop else Icons.Default.Timer,
-                contentDescription = if (isThisRunning) "Zatrzymaj" else "Uruchom",
-                enabled = isThisRunning || !isAnyTimerRunning
-            )
-            AppIconButton(
-                onClick = { viewModel.resetTimer(name) },
-                icon = Icons.Default.SettingsBackupRestore,
-                contentDescription = "Zresetuj timer",
-                enabled = !isAnyTimerRunning
-            )
-            if (!isThisRunning && (currentTimer.hours > 0 || currentTimer.minutes > 0 || currentTimer.seconds > 0)) {
-                PrimaryButton(
-                    text = "Zapisz",
-                    onClick = {
-                        val timerToSave = currentTimer.copy(routeName = name)
-                        viewModel.saveTime(timerToSave) },
-                    icon = Icons.Default.Save,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        TextButton(
-            onClick = { isHistoryExpanded = !isHistoryExpanded },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (isHistoryExpanded) "Ukryj historię" else "Pokaż historię")
-            Icon(
-                imageVector = if (isHistoryExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = null
-            )
-        }
-        if (isHistoryExpanded) {
-            if (history.isEmpty()) {
-                Text(
-                    text = "Brak historii dla tej trasy",
-                    modifier = Modifier.padding(16.dp),
-                    color = Color.Gray
-                )}
-            else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    items(history) { record ->
-                        Row {
-                            Text(text = record.formattedDate)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TabletMainScreen(viewModel: RouteViewModel) {
-    val routes by viewModel.currentRoutes.collectAsState()
-    var selectedRoute by remember { mutableStateOf<Route?>(null) }
-
-    LaunchedEffect(Unit) {
-        if(routes.isEmpty()) {
-            viewModel.loadFromGist()
-        }
-    }
-
-    Row(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .width(350.dp)
-                .fillMaxHeight()
-        ) {
-            Row(modifier = Modifier.padding(8.dp)) {
-                PrimaryButton(
-                    "Trasy rowerowe",
-                    onClick = { viewModel.selectBikeRoutes() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                )
-                PrimaryButton(
-                    "Trasy piesze",
-                    onClick = { viewModel.selectHikingRoutes() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                )
-            }
-
-            Box(modifier = Modifier.weight(1f)) {
-                RoutesList(
-                    data = routes,
-                    onRouteSelected = { route ->
-                        selectedRoute = route
-                    }
-                )
-            }
-        }
-
-        VerticalDivider(thickness = 1.dp, color = Color.LightGray)
-
-//        Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(32.dp)) {
-//            val current = selectedRoute
-//            if (current != null) {
-//                DetailsScreen(
-//                    name = current.name,
-//                    description = current.description,
-//                    onBack = {}
-//                )
-//            } else {
-//                Text(
-//                    text = "Wybierz trasę z listy",
-//                    modifier = Modifier.align(Alignment.Center),
-//                    style = MaterialTheme.typography.bodyLarge,
-//                    color = Color.Gray
-//                )
-//            }
-//        }
-    }
-}
-@Composable
-fun PrimaryButton(
-    text: String,
-    onClick: () -> Unit,
-    icon: ImageVector? = null,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier
-            .padding(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = BrickOrange,
-            contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-    ) {
-        if (icon != null) {
-            Icon(imageVector = icon, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-        Text(text = text, style = MaterialTheme.typography.labelLarge)
-    }
-}
-
-@Composable
-fun ReturnButton (
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    IconButton(
-        onClick = onClick,
-        modifier = modifier,
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Wstecz",
-            tint = Color.White
-        )
-    }
-}
-
-@Composable 
-fun AppIconButton (
-    onClick: () -> Unit,
-    icon: ImageVector,
-    contentDescription: String,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
-) {
-    IconButton(
-        onClick = onClick,
-        modifier = modifier,
-        enabled = enabled,
-    )
-    {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = if (enabled) Color.Black
-                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-        )
     }
 }
 
