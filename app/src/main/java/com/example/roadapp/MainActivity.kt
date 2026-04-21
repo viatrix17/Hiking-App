@@ -120,6 +120,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     RoadAppNavHost(
                         navController = navController,
+                        isDarkTheme = isDarkTheme,
                         isTablet = isTablet,
                         viewModel = viewModel,
                         timerViewModel = timerViewModel,

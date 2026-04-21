@@ -16,6 +16,7 @@ import com.example.roadapp.ui.screens.WelcomeScreen
 @Composable
 fun RoadAppNavHost(
     navController: NavHostController,
+    isDarkTheme: Boolean,
     isTablet: Boolean,
     viewModel: RouteViewModel,
     timerViewModel: TimerViewModel,
@@ -27,11 +28,14 @@ fun RoadAppNavHost(
         modifier = modifier
     ) {
         composable("welcome") {
-            WelcomeScreen(onNavigateToHome = {
-                navController.navigate("home") {
-                    popUpTo("welcome") { inclusive = true }
-                }
-            })
+            WelcomeScreen(
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("welcome") { inclusive = true }
+                    }
+                },
+                isDarkTheme = isDarkTheme
+            )
         }
         composable("home") {
             if (isTablet) {

@@ -52,7 +52,9 @@ import com.example.roadapp.ui.theme.DarkBrown
 import kotlinx.coroutines.launch
 
 @Composable
-fun WelcomeScreen(onNavigateToHome: () -> Unit) {
+fun WelcomeScreen(
+    onNavigateToHome: () -> Unit,
+    isDarkTheme: Boolean) {
     var sensorValue by remember { mutableStateOf(0f) }
     val context = LocalContext.current
     val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
@@ -128,7 +130,9 @@ fun WelcomeScreen(onNavigateToHome: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(id = R.drawable.logo_light_mode),
+                painter = painterResource(
+                    id = if (isDarkTheme) R.drawable.logo_dark_mode else R.drawable.logo_light_mode
+                ),
                 contentDescription = "Rysunek gór",
                 modifier = Modifier
                     .scale(scale.value)
