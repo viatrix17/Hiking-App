@@ -7,7 +7,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.roadapp.ui.screens.DetailsScreen
 import com.example.roadapp.ui.screens.MainScreen
-import com.example.roadapp.ui.screens.TabletMainScreen
 import com.example.roadapp.viewmodel.RouteViewModel
 import com.example.roadapp.viewmodel.TimerViewModel
 import android.net.Uri
@@ -38,21 +37,20 @@ fun RoadAppNavHost(
             )
         }
         composable("home") {
-            if (isTablet) {
-                TabletMainScreen(viewModel = viewModel)
-            } else {
-                MainScreen(
-                    viewModel = viewModel,
-                    onRouteSelected = { routeName ->
+            MainScreen(
+                viewModel = viewModel,
+                onRouteSelected = { routeName ->
+                    if (!isTablet) {
                         val encodedName = Uri.encode(routeName)
                         navController.navigate("details/$encodedName")
                     }
-                )
-            }
+                },
+                timerViewModel = timerViewModel
+            )
         }
+
         composable("details/{name}") { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name") ?: ""
-            // Pobieramy trasę z ViewModelu
             val route = viewModel.getRouteByName(name)
 
             DetailsScreen(
@@ -61,6 +59,7 @@ fun RoadAppNavHost(
                 id = route?.id ?: 0,
                 onBack = { navController.popBackStack() },
                 viewModel = timerViewModel,
+                isTablet = isTablet
             )
         }
     }

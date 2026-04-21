@@ -15,6 +15,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class RouteViewModel : ViewModel() {
+    init {
+        android.util.Log.d("DEBUG_VM", "ViewModel utworzony: ${this.hashCode()}")
+    }
 
     private var allBikeRoutesFromApi: List<Route> = emptyList()
     private var allHikingRoutesFromApi: List<Route> = emptyList()
@@ -45,6 +48,7 @@ class RouteViewModel : ViewModel() {
             try {
                 // IO thread
                 val response = RetrofitInstance.api.getAllPosts()
+                android.util.Log.d("DEBUG_VM", "Sukces! Pobrano: ${response.size} tras")
 
                 val bikeRoutes = response
                     .filter { it.userId == 1 }
@@ -61,13 +65,17 @@ class RouteViewModel : ViewModel() {
                     _allRoutes.value = bikeRoutes + hikingRoutes
                 }
             } catch (e: Exception) {
+                android.util.Log.e("DEBUG_VM", "Błąd pobierania danych: ${e.message}", e)
                 e.printStackTrace()
             }
         }
     }
 
     fun selectBikeRoutes() {
+        android.util.Log.d("DEBUG_VM", "Wszystkie trasy w pamięci: ${allBikeRoutesFromApi.size}")
+        android.util.Log.d("DEBUG_VM", "Wciśnięto Rower! Filtruję...")
         _currentRoutes.value = allBikeRoutesFromApi
+
         _searchQuery.value = ""
     }
 

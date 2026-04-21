@@ -76,7 +76,7 @@ fun WelcomeScreen(
                         else -> event.values[0]
                     }
 
-                    Log.d("SensorDebug", "Rotacja: $rotation, Wartość: $rawValue")
+//                    Log.d("SensorDebug", "Rotacja: $rotation, Wartość: $rawValue")
 
                     sensorValue = (sensorValue * 0.8f) + (rawValue * 0.2f)
                 }

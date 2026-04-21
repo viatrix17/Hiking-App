@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.roadapp.model.RouteHistoryRecord
 import com.example.roadapp.util.getRouteImageId
 import com.example.roadapp.model.Timer
 import com.example.roadapp.ui.components.AppIconButton
@@ -52,31 +53,29 @@ fun DetailsScreen(
     id: Int,
     onBack: () -> Unit,
     viewModel: TimerViewModel,
+    isTablet: Boolean,
 ) {
-
     val timerMap by viewModel.timerStates.collectAsState()
     val activeRouteName by viewModel.activeRouteName.collectAsState()
-
     val history by viewModel.getRouteTimes(name).collectAsState(initial = emptyList())
-    var isHistoryExpanded by remember { mutableStateOf(false) }
 
     val currentTimer = timerMap[name] ?: Timer(routeName = name)
     val isAnyTimerRunning = activeRouteName != null
     val isThisRunning = (activeRouteName == name)
-
     var showConfirmationDialog by remember { mutableStateOf(false) }
 
     val hasUnsavedTimers = timerMap.any { (routeName, timer) ->
         routeName != name && (timer.hours > 0 || timer.minutes > 0 || timer.seconds > 0)
     }
 
-    fun handleStartClick() {
-        if (hasUnsavedTimers) {
-            showConfirmationDialog = true
-        } else {
-            viewModel.startTimer(name)
-        }
+    val onStart = {
+        if (hasUnsavedTimers) showConfirmationDialog = true
+        else viewModel.startTimer(name)
     }
+
+    val onStop = { viewModel.stopTimer(name) }
+    val onReset = { viewModel.resetTimer(name) }
+    val onSave = { viewModel.saveTime(currentTimer.copy(routeName = name)) }
 
     if (showConfirmationDialog) {
         AlertDialog(
@@ -90,91 +89,92 @@ fun DetailsScreen(
                     showConfirmationDialog = false
                 }) { Text("Tak, zacznij nowy") }
             },
-            dismissButton = {
-                TextButton(onClick = { showConfirmationDialog = false }) { Text("Anuluj") }
-            }
+            dismissButton = { TextButton(onClick = { showConfirmationDialog = false }) { Text("Anuluj") } }
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize())
-    {
+    if (isTablet) {
+        TabletDetailsLayout(
+            name = name, description = description, id = id,
+            timer = currentTimer, history = history,
+            isThisRunning = isThisRunning, isAnyTimerRunning = isAnyTimerRunning,
+            onStart = onStart, onStop = onStop, onReset = onReset, onSave = onSave
+        )
+    } else {
+        MobileDetailsLayout(
+            name = name, description = description, id = id,
+            timer = currentTimer, history = history,
+            isThisRunning = isThisRunning, isAnyTimerRunning = isAnyTimerRunning,
+            onStart = onStart, onStop = onStop, onReset = onReset, onSave = onSave,
+            onBack = onBack
+        )
+    }
+
+}
+
+
+@Composable
+fun MobileDetailsLayout(
+    name: String,
+    description: String,
+    id: Int,
+    timer: Timer,
+    history: List<RouteHistoryRecord>,
+    isThisRunning: Boolean,
+    isAnyTimerRunning: Boolean,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onReset: () -> Unit,
+    onSave: () -> Unit,
+    onBack: () -> Unit
+) {
+    var isHistoryExpanded by remember { mutableStateOf(false) }
+    Column(modifier = Modifier.fillMaxSize()) {
+
         Image(
             painter = painterResource(id = getRouteImageId(id)),
             contentDescription = "Zdjęcie trasy ${name}",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp),
+            modifier = Modifier.fillMaxWidth().height(250.dp),
             contentScale = ContentScale.Crop
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        )
-        {
-
-            Text(
-                text = name,
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Text(text = name, style = MaterialTheme.typography.headlineLarge)
             Spacer(modifier = Modifier.height(8.dp))
+            Text(text = description, style = MaterialTheme.typography.bodyMedium)
 
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
             Spacer(modifier = Modifier.height(24.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = String.format("%02d:%02d:%02d", currentTimer.hours, currentTimer.minutes, currentTimer.seconds),
+                        text = String.format("%02d:%02d:%02d", timer.hours, timer.minutes, timer.seconds),
                         style = MaterialTheme.typography.displayMedium
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Tylko ikony w rzędzie
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         AppIconButton(
-                            onClick = { if (isThisRunning) viewModel.stopTimer(name) else handleStartClick() },
+                            onClick = { if (isThisRunning) onStop() else onStart() }, // Używamy callbacków!
                             icon = if (isThisRunning) Icons.Default.Stop else Icons.Default.Timer,
                             contentDescription = if (isThisRunning) "Zatrzymaj" else "Uruchom",
                             enabled = isThisRunning || !isAnyTimerRunning
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         AppIconButton(
-                            onClick = { viewModel.resetTimer(name) },
+                            onClick = onReset, // Używamy callbacka!
                             icon = Icons.Default.SettingsBackupRestore,
                             contentDescription = "Zresetuj timer",
                             enabled = !isAnyTimerRunning
                         )
                     }
 
-                    // Przycisk "Zapisz" jest teraz pod spodem, w kolumnie
-                    if (!isThisRunning && (currentTimer.hours > 0 || currentTimer.minutes > 0 || currentTimer.seconds > 0)) {
+                    if (!isThisRunning && (timer.hours > 0 || timer.minutes > 0 || timer.seconds > 0)) {
                         Spacer(modifier = Modifier.height(16.dp))
                         PrimaryButton(
                             text = "Zapisz",
-                            onClick = {
-                                val timerToSave = currentTimer.copy(routeName = name)
-                                viewModel.saveTime(timerToSave)
-                            },
+                            onClick = onSave, // Używamy callbacka!
                             icon = Icons.Default.Save,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -182,15 +182,129 @@ fun DetailsScreen(
                 }
             }
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             TextButton(
                 onClick = { isHistoryExpanded = !isHistoryExpanded },
                 modifier = Modifier.fillMaxWidth()
             ) {
+                Text(
+                    if (isHistoryExpanded) "Ukryj historię" else "Pokaż historię",
+                    color = MaterialTheme.colorScheme.onBackground)
+                Icon(
+                    imageVector = if (isHistoryExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null
+                )
+            }
+            if (isHistoryExpanded) {
+                if (history.isEmpty()) {
+                    Text(
+                        text = "Brak historii dla tej trasy",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        items(history) { record ->
+                            Row {
+                                Text(text = record.formattedDate)
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TabletDetailsLayout(
+    name: String,
+    description: String,
+    id: Int,
+    timer: Timer,
+    history: List<RouteHistoryRecord>,
+    isThisRunning: Boolean,
+    isAnyTimerRunning: Boolean,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onReset: () -> Unit,
+    onSave: () -> Unit,
+) {
+    var isHistoryExpanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Text(text = name, style = MaterialTheme.typography.headlineLarge)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = description, style = MaterialTheme.typography.bodyMedium)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = String.format(
+                        "%02d:%02d:%02d",
+                        timer.hours,
+                        timer.minutes,
+                        timer.seconds
+                    ),
+                    style = MaterialTheme.typography.displayMedium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    AppIconButton(
+                        onClick = { if (isThisRunning) onStop() else onStart() },
+                        icon = if (isThisRunning) Icons.Default.Stop else Icons.Default.Timer,
+                        contentDescription = if (isThisRunning) "Zatrzymaj" else "Uruchom",
+                        enabled = isThisRunning || !isAnyTimerRunning
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    AppIconButton(
+                        onClick = onReset,
+                        icon = Icons.Default.SettingsBackupRestore,
+                        contentDescription = "Zresetuj timer",
+                        enabled = !isAnyTimerRunning
+                    )
+                }
+
+                if (!isThisRunning && (timer.hours > 0 || timer.minutes > 0 || timer.seconds > 0)) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    PrimaryButton(
+                        text = "Zapisz",
+                        onClick = onSave,
+                        icon = Icons.Default.Save,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        TextButton(
+            onClick = { isHistoryExpanded = !isHistoryExpanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text(
                 if (isHistoryExpanded) "Ukryj historię" else "Pokaż historię",
-                color = MaterialTheme.colorScheme.onBackground)
+                color = MaterialTheme.colorScheme.onBackground
+            )
             Icon(
                 imageVector = if (isHistoryExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = null
@@ -219,8 +333,6 @@ fun DetailsScreen(
                     }
                 }
             }
-            }
         }
     }
 }
-
