@@ -14,6 +14,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -116,29 +117,35 @@ fun WelcomeScreen(onNavigateToHome: () -> Unit) {
     val tilt = (sensorValue * 3f).coerceIn(-20f, 20f)
 
     val finalRotation = rotation.value + tilt
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.logo_light_mode),
-            contentDescription = "Rysunek gór",
-            modifier = Modifier
-                .scale(scale.value)
-                .rotate(finalRotation)
-                .alpha(logoAlpha.value)
-                .fillMaxWidth(0.5f)
-                .wrapContentHeight()
-                .aspectRatio(16f / 9f),
-            contentScale = ContentScale.Fit
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(
-            text = "HIKING APP",
-            modifier = Modifier.alpha(textAlpha.value),
-            style = MaterialTheme.typography.headlineMedium,
-            color = DarkBrown
-        )
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.logo_light_mode),
+                contentDescription = "Rysunek gór",
+                modifier = Modifier
+                    .scale(scale.value)
+                    .rotate(finalRotation)
+                    .alpha(logoAlpha.value)
+                    .fillMaxWidth(0.5f)
+                    .wrapContentHeight()
+                    .aspectRatio(16f / 9f),
+                contentScale = ContentScale.Fit
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "HIKING APP",
+                modifier = Modifier.alpha(textAlpha.value),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
     }
 }

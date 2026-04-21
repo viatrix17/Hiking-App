@@ -1,8 +1,5 @@
-package com.example.roadapp
+package com.example.roadapp.util
 
-import android.content.Context
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import com.example.roadapp.R
 
 fun getRouteImageId(routeId: Int): Int {
