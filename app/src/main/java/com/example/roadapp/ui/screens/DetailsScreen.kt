@@ -1,6 +1,8 @@
 package com.example.roadapp.ui.screens
 
+import android.content.res.Configuration
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,17 +20,22 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,7 +46,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.roadapp.model.RouteHistoryRecord
@@ -61,6 +70,9 @@ fun DetailsScreen(
     viewModel: TimerViewModel,
     isTablet: Boolean,
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     val timerMap by viewModel.timerStates.collectAsState()
     val activeRouteName by viewModel.activeRouteName.collectAsState()
     val history by viewModel.getRouteTimes(name).collectAsState(initial = emptyList())
@@ -101,7 +113,9 @@ fun DetailsScreen(
         )
     }
 
+
     if (isTablet) {
+        android.util.Log.d("DEBUG_VM", "Tablet!!!")
         TabletDetailsLayout(
             name = name, description = description, id = id,
             timer = currentTimer, history = history,
@@ -109,7 +123,17 @@ fun DetailsScreen(
             onStart = onStart, onStop = onStop, onReset = onReset, onSave = onSave,
             listState = listState
         )
+    } else if (isLandscape) {
+        android.util.Log.d("DEBUG_VM", "Obrót!!!")
+        TurnedMobileDetailsLayout(
+            name = name, description = description, id = id,
+            timer = currentTimer, history = history,
+            isThisRunning = isThisRunning, isAnyTimerRunning = isAnyTimerRunning,
+            onStart = onStart, onStop = onStop, onReset = onReset, onSave = onSave,
+            onBack = onBack
+        )
     } else {
+        android.util.Log.d("DEBUG_VM", "Brak obrotu!!!")
         MobileDetailsLayout(
             name = name, description = description, id = id,
             timer = currentTimer, history = history,
@@ -118,7 +142,6 @@ fun DetailsScreen(
             onBack = onBack
         )
     }
-
 }
 
 
@@ -142,7 +165,6 @@ fun MobileDetailsLayout(
 
     Column(
         modifier = Modifier.fillMaxSize()
-            .padding(16.dp)
             .verticalScroll(scrollState)
             .padding(16.dp)) {
 
@@ -184,7 +206,7 @@ fun MobileDetailsLayout(
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         AppIconButton(
-                            onClick = onReset, // Używamy callbacka!
+                            onClick = onReset,
                             icon = Icons.Default.SettingsBackupRestore,
                             contentDescription = "Zresetuj timer",
                             enabled = !isAnyTimerRunning
@@ -195,7 +217,7 @@ fun MobileDetailsLayout(
                         Spacer(modifier = Modifier.height(16.dp))
                         PrimaryButton(
                             text = "Zapisz",
-                            onClick = onSave, // Używamy callbacka!
+                            onClick = onSave,
                             icon = Icons.Default.Save,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -218,16 +240,19 @@ fun MobileDetailsLayout(
                 )
             }
             if (isHistoryExpanded) {
+                android.util.Log.e("DEBUG_VM", "HALO")
                 if (history.isEmpty()) {
+                    android.util.Log.e("DEBUG_VM", "BRAK")
                     Text(
                         text = "Brak historii dla tej trasy",
                         modifier = Modifier.padding(16.dp),
                         color = MaterialTheme.colorScheme.onBackground
                     )
                 } else {
+                    android.util.Log.e("DEBUG_VM", "JEST")
+
                     Column(
                         modifier = Modifier
-                            .weight(1f)
                             .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -244,6 +269,126 @@ fun MobileDetailsLayout(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TurnedMobileDetailsLayout(
+    name: String,
+    description: String,
+    id: Int,
+    timer: Timer,
+    history: List<RouteHistoryRecord>,
+    isThisRunning: Boolean,
+    isAnyTimerRunning: Boolean,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onReset: () -> Unit,
+    onSave: () -> Unit,
+    onBack: () -> Unit
+) {
+    var isHistoryExpanded by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Image(
+                painter = painterResource(id = getRouteImageId(id)),
+                contentDescription = "Zdjęcie trasy ${name}",
+                modifier = Modifier
+                    .height(250.dp)
+                    .weight(0.5f),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(0.5f)) {
+                Text(text = name, style = MaterialTheme.typography.headlineLarge)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = description, style = MaterialTheme.typography.bodyMedium)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = String.format(
+                                "%02d:%02d:%02d",
+                                timer.hours,
+                                timer.minutes,
+                                timer.seconds
+                            ),
+                            style = MaterialTheme.typography.displayMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            AppIconButton(
+                                onClick = { if (isThisRunning) onStop() else onStart() }, // Używamy callbacków!
+                                icon = if (isThisRunning) Icons.Default.Stop else Icons.Default.Timer,
+                                contentDescription = if (isThisRunning) "Zatrzymaj" else "Uruchom",
+                                enabled = isThisRunning || !isAnyTimerRunning
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            AppIconButton(
+                                onClick = onReset,
+                                icon = Icons.Default.SettingsBackupRestore,
+                                contentDescription = "Zresetuj timer",
+                                enabled = !isAnyTimerRunning
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            AppIconButton(
+                                onClick = { isHistoryExpanded = true }, // Otwiera BottomSheet
+                                icon = Icons.Default.ViewList,
+                                contentDescription = "Pokaż historię"
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            if (!isThisRunning && (timer.hours > 0 || timer.minutes > 0 || timer.seconds > 0)) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                AppIconButton(
+                                    onClick = onSave,
+                                    icon = Icons.Default.Save,
+                                    contentDescription = "Zapisz",
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (isHistoryExpanded) {
+        ModalBottomSheet(
+            onDismissRequest = { isHistoryExpanded = false },
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                Text("Historia trasy", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+                history.forEach { record ->
+                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text(text = record.formattedDate)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun TabletDetailsLayout(

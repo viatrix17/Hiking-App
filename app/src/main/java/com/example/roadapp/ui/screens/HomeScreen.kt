@@ -1,5 +1,6 @@
 package com.example.roadapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -48,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -63,7 +65,8 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     onRouteSelected: (String) -> Unit,
     viewModel: RouteViewModel,
-    timerViewModel: TimerViewModel) {
+    timerViewModel: TimerViewModel,
+    isTablet: Boolean) {
 
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredRoutes by viewModel.filteredRoutes.collectAsState()
@@ -76,102 +79,97 @@ fun MainScreen(
 
 
     LaunchedEffect(Unit) {
-        if(filteredRoutes.isEmpty()) {
+        if (filteredRoutes.isEmpty()) {
             viewModel.loadFromGist()
         }
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        if (maxWidth < 600.dp) {
-            PhoneLayout(
-                searchQuery = searchQuery,
-                filteredRoutes = filteredRoutes,
-                onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
-                isListVisible = isListVisible,
-                onToggleBike = {
-                    if (isListVisible && activeFilterType == "bike") {
-                        viewModel.selectAllRoutes()
-                        activeFilterType = null
-                    }
-                    else {
-                        viewModel.selectBikeRoutes(); activeFilterType = "bike";
-                    }
-                    isListVisible = true
-                },
-                onToggleHiking = {
-                    if (isListVisible && activeFilterType == "hiking") {
-                        viewModel.selectAllRoutes()
-                        activeFilterType = null
-                    }
-                    else {
-                        viewModel.selectHikingRoutes(); activeFilterType = "hiking";
-                    }
-                    isListVisible = true
-                },
-                onRouteSelected = { route ->
-                    onRouteSelected(route.name)
-                },
-                listState = listState
-            )
-        } else {
-            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-            val scope = rememberCoroutineScope()
-            Row(modifier = Modifier.fillMaxSize()) {
-                Box(modifier = Modifier.weight(0.4f)) {
-                    TabletLayout(
-                        searchQuery = searchQuery,
-                        filteredRoutes = filteredRoutes,
-                        onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
-                        isListVisible = isListVisible,
-                        onToggleBike = {
-                            if (isListVisible && activeFilterType == "bike") {
-                                viewModel.selectAllRoutes()
-                                activeFilterType = null
-                            }
-                            else {
-                                viewModel.selectBikeRoutes(); activeFilterType =
-                                    "bike";
-                            }
-                            isListVisible = true
-
-                        },
-                        onToggleHiking = {
-                            if (isListVisible && activeFilterType == "hiking") {
-                                viewModel.selectAllRoutes()
-                                activeFilterType = null
-                            }
-                            else {
-                                viewModel.selectHikingRoutes(); activeFilterType =
-                                    "hiking";
-                            }
-                            isListVisible = true
-                        },
-                        onRouteSelected = { route ->
-                            selectedRoute = if (selectedRoute == route) null else route
-                        },
-                        listState = listState,
-                        drawerState = drawerState,
-                        scope = scope,
-                        activeFilterType = activeFilterType
-                    )
+    if (!isTablet) {
+        PhoneLayout(
+            searchQuery = searchQuery,
+            filteredRoutes = filteredRoutes,
+            onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
+            isListVisible = isListVisible,
+            onToggleBike = {
+                if (isListVisible && activeFilterType == "bike") {
+                    viewModel.selectAllRoutes()
+                    activeFilterType = null
+                } else {
+                    viewModel.selectBikeRoutes(); activeFilterType = "bike";
                 }
+                isListVisible = true
+            },
+            onToggleHiking = {
+                if (isListVisible && activeFilterType == "hiking") {
+                    viewModel.selectAllRoutes()
+                    activeFilterType = null
+                } else {
+                    viewModel.selectHikingRoutes(); activeFilterType = "hiking";
+                }
+                isListVisible = true
+            },
+            onRouteSelected = { route ->
+                onRouteSelected(route.name)
+            },
+            listState = listState
+        )
+    } else {
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.weight(0.4f)) {
+                TabletLayout(
+                    searchQuery = searchQuery,
+                    filteredRoutes = filteredRoutes,
+                    onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
+                    isListVisible = isListVisible,
+                    onToggleBike = {
+                        if (isListVisible && activeFilterType == "bike") {
+                            viewModel.selectAllRoutes()
+                            activeFilterType = null
+                        } else {
+                            viewModel.selectBikeRoutes(); activeFilterType =
+                                "bike";
+                        }
+                        isListVisible = true
 
-                Box(modifier = Modifier.weight(0.6f)) {
-                    if (selectedRoute != null) {
-                        DetailsScreen(
-                            name = selectedRoute!!.name,
-                            description = selectedRoute!!.description ?: "Brak opisu",
-                            id = selectedRoute!!.id ?: 0,
-                            onBack = { selectedRoute = null },
-                            viewModel = timerViewModel,
-                            isTablet = true
-                        )
-                    }
+                    },
+                    onToggleHiking = {
+                        if (isListVisible && activeFilterType == "hiking") {
+                            viewModel.selectAllRoutes()
+                            activeFilterType = null
+                        } else {
+                            viewModel.selectHikingRoutes(); activeFilterType =
+                                "hiking";
+                        }
+                        isListVisible = true
+                    },
+                    onRouteSelected = { route ->
+                        selectedRoute = if (selectedRoute == route) null else route
+                    },
+                    listState = listState,
+                    drawerState = drawerState,
+                    scope = scope,
+                    activeFilterType = activeFilterType
+                )
+            }
+
+            Box(modifier = Modifier.weight(0.6f)) {
+                if (selectedRoute != null) {
+                    DetailsScreen(
+                        name = selectedRoute!!.name,
+                        description = selectedRoute!!.description ?: "Brak opisu",
+                        id = selectedRoute!!.id ?: 0,
+                        onBack = { selectedRoute = null },
+                        viewModel = timerViewModel,
+                        isTablet = true
+                    )
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun PhoneLayout(

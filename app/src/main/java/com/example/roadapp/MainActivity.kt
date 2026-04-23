@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
 
             RoadAppTheme(darkTheme = isDarkTheme) {
                 val configuration = LocalConfiguration.current
-                val isTablet = configuration.screenWidthDp >= 600
+                val isTablet = configuration.smallestScreenWidthDp >= 600
 
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()

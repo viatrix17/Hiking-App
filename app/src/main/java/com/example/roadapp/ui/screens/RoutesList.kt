@@ -60,7 +60,8 @@ fun RouteCard(route: Route, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f),
+//            .aspectRatio(1f),
+            .padding(4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -69,16 +70,17 @@ fun RouteCard(route: Route, onClick: () -> Unit) {
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
             Image(
                 painter = painterResource(id = getRouteImageId(route.id)),
                 contentDescription = "Zdjęcie trasy ${route.name}",
                 modifier = Modifier
-                    .size(100.dp)
+                    .fillMaxWidth()
+                    .height(120.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )

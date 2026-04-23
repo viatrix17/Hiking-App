@@ -45,7 +45,8 @@ fun RoadAppNavHost(
                         navController.navigate("details/$encodedName")
                     }
                 },
-                timerViewModel = timerViewModel
+                timerViewModel = timerViewModel,
+                isTablet = isTablet
             )
         }
 
