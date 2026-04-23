@@ -2,6 +2,7 @@ package com.example.roadapp.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -42,6 +47,7 @@ import com.example.roadapp.util.getRouteImageId
 import com.example.roadapp.model.Timer
 import com.example.roadapp.ui.components.AppIconButton
 import com.example.roadapp.ui.components.PrimaryButton
+import com.example.roadapp.ui.components.SimpleListScrollbar
 import com.example.roadapp.viewmodel.TimerViewModel
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -77,6 +83,8 @@ fun DetailsScreen(
     val onReset = { viewModel.resetTimer(name) }
     val onSave = { viewModel.saveTime(currentTimer.copy(routeName = name)) }
 
+    val listState = rememberLazyListState()
+
     if (showConfirmationDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmationDialog = false },
@@ -98,7 +106,8 @@ fun DetailsScreen(
             name = name, description = description, id = id,
             timer = currentTimer, history = history,
             isThisRunning = isThisRunning, isAnyTimerRunning = isAnyTimerRunning,
-            onStart = onStart, onStop = onStop, onReset = onReset, onSave = onSave
+            onStart = onStart, onStop = onStop, onReset = onReset, onSave = onSave,
+            listState = listState
         )
     } else {
         MobileDetailsLayout(
@@ -129,7 +138,13 @@ fun MobileDetailsLayout(
     onBack: () -> Unit
 ) {
     var isHistoryExpanded by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize()) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState)
+            .padding(16.dp)) {
 
         Image(
             painter = painterResource(id = getRouteImageId(id)),
@@ -145,7 +160,13 @@ fun MobileDetailsLayout(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
                 Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = String.format("%02d:%02d:%02d", timer.hours, timer.minutes, timer.seconds),
@@ -204,14 +225,14 @@ fun MobileDetailsLayout(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                 } else {
-                    LazyColumn(
+                    Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        items(history) { record ->
-                            Row {
+                        history.forEach { record ->
+                            Row(modifier = Modifier.padding(vertical = 4.dp)) {
                                 Text(text = record.formattedDate)
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
@@ -237,17 +258,38 @@ fun TabletDetailsLayout(
     onStop: () -> Unit,
     onReset: () -> Unit,
     onSave: () -> Unit,
+    listState: LazyListState = rememberLazyListState(),
 ) {
     var isHistoryExpanded by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState)
+            .padding(16.dp)
+    ) {
+        Image(
+            painter = painterResource(id = getRouteImageId(id)),
+            contentDescription = "Zdjęcie trasy ${name}",
+            modifier = Modifier.fillMaxWidth().height(250.dp),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
         Text(text = name, style = MaterialTheme.typography.headlineLarge)
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = description, style = MaterialTheme.typography.bodyMedium)
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
             Column(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -318,14 +360,13 @@ fun TabletDetailsLayout(
                     color = MaterialTheme.colorScheme.onBackground
                 )
             } else {
-                LazyColumn(
+                Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(history) { record ->
-                        Row {
+                    history.forEach { record ->
+                        Row(modifier = Modifier.padding(vertical = 4.dp)) {
                             Text(text = record.formattedDate)
                             Spacer(modifier = Modifier.width(16.dp))
                             Text(text = "${record.timer.hours}:${record.timer.minutes}:${record.timer.seconds}")
@@ -336,3 +377,4 @@ fun TabletDetailsLayout(
         }
     }
 }
+

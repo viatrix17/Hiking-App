@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -146,7 +147,7 @@ fun MainScreen(
                             isListVisible = true
                         },
                         onRouteSelected = { route ->
-                            selectedRoute = route
+                            selectedRoute = if (selectedRoute == route) null else route
                         },
                         listState = listState,
                         drawerState = drawerState,
@@ -261,9 +262,18 @@ fun TabletLayout(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.width(200.dp)) {
+            ModalDrawerSheet(
+                modifier = Modifier.width(200.dp),
+                drawerShape = RectangleShape,
+                drawerContainerColor = MaterialTheme.colorScheme.primary,
+                drawerContentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
                 Column(modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)) {
-                    Text("Wybierz trasę", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 8.dp), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Wybierz trasę",
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 8.dp),
+                        style = MaterialTheme.typography.titleMedium
+                    )
 
                     NavigationDrawerItem(
                         label = { Text("Trasy rowerowe") },
@@ -272,6 +282,12 @@ fun TabletLayout(
                             onToggleBike()
                             scope.launch { drawerState.close() }
                         },
+                        colors = NavigationDrawerItemDefaults.colors(
+                            selectedContainerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
+                            unselectedContainerColor = MaterialTheme.colorScheme.primary,                        // Tło niewybranego
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                            unselectedTextColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
 
@@ -282,6 +298,12 @@ fun TabletLayout(
                             onToggleHiking()
                             scope.launch { drawerState.close() }
                         },
+                        colors = NavigationDrawerItemDefaults.colors(
+                            selectedContainerColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
+                            unselectedContainerColor = MaterialTheme.colorScheme.primary,                        // Tło niewybranego
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                            unselectedTextColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
                 }

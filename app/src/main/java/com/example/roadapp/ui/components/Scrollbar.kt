@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -35,6 +37,47 @@ fun SimpleVerticalScrollbar(
         } else {
             -1f
         }
+
+        Box(
+            modifier = modifier
+                .width(6.dp)
+                .fillMaxHeight()
+                .background(Color.Transparent)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(thumbSizeFraction)
+                    .align(Alignment.TopCenter)
+                    .graphicsLayer {
+                        this.transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
+                        this.translationY = (scrollOffset + 1f) / 2f * (size.height / thumbSizeFraction - size.height)
+                    }
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color.Gray.copy(alpha = 0.5f))
+            )
+        }
+    }
+}
+
+@Composable
+fun SimpleListScrollbar(
+    modifier: Modifier = Modifier,
+    listState: LazyListState
+) {
+    val layoutInfo = listState.layoutInfo
+    val totalItems = layoutInfo.totalItemsCount
+    val visibleItems = layoutInfo.visibleItemsInfo
+
+    if (totalItems > 0 && visibleItems.isNotEmpty()) {
+        val firstVisibleIndex = visibleItems.first().index
+        val visibleCount = visibleItems.size
+
+        if (totalItems <= visibleCount) return
+
+        val thumbSizeFraction = (visibleCount.toFloat() / totalItems.toFloat()).coerceIn(0.1f, 1f)
+
+        val scrollOffset = (firstVisibleIndex.toFloat() / (totalItems - visibleCount).toFloat()) * 2f - 1f
 
         Box(
             modifier = modifier
