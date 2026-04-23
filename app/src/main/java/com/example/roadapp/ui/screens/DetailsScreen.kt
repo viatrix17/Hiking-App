@@ -125,7 +125,7 @@ fun DetailsScreen(
         )
     } else if (isLandscape) {
         android.util.Log.d("DEBUG_VM", "Obrót!!!")
-        TurnedMobileDetailsLayout(
+        LandscapeMobileDetailsLayout(
             name = name, description = description, id = id,
             timer = currentTimer, history = history,
             isThisRunning = isThisRunning, isAnyTimerRunning = isAnyTimerRunning,
@@ -272,7 +272,7 @@ fun MobileDetailsLayout(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TurnedMobileDetailsLayout(
+fun LandscapeMobileDetailsLayout(
     name: String,
     description: String,
     id: Int,

@@ -1,5 +1,6 @@
 package com.example.roadapp.ui.screens
 
+import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -67,6 +68,8 @@ fun MainScreen(
     viewModel: RouteViewModel,
     timerViewModel: TimerViewModel,
     isTablet: Boolean) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredRoutes by viewModel.filteredRoutes.collectAsState()
@@ -84,7 +87,9 @@ fun MainScreen(
         }
     }
 
-    if (!isTablet) {
+    if (!isTablet && !isLandscape) {
+        android.util.Log.d("DEBUG_VM", "normal!!!")
+
         PhoneLayout(
             searchQuery = searchQuery,
             filteredRoutes = filteredRoutes,
@@ -113,7 +118,40 @@ fun MainScreen(
             },
             listState = listState
         )
+    } else if (isLandscape) {
+        android.util.Log.d("DEBUG_VM", "Obrót main!!!")
+
+        LandscapePhoneLayout(
+            searchQuery = searchQuery,
+            filteredRoutes = filteredRoutes,
+            onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
+            isListVisible = isListVisible,
+            onToggleBike = {
+                if (isListVisible && activeFilterType == "bike") {
+                    viewModel.selectAllRoutes()
+                    activeFilterType = null
+                } else {
+                    viewModel.selectBikeRoutes(); activeFilterType = "bike";
+                }
+                isListVisible = true
+            },
+            onToggleHiking = {
+                if (isListVisible && activeFilterType == "hiking") {
+                    viewModel.selectAllRoutes()
+                    activeFilterType = null
+                } else {
+                    viewModel.selectHikingRoutes(); activeFilterType = "hiking";
+                }
+                isListVisible = true
+            },
+            onRouteSelected = { route ->
+                onRouteSelected(route.name)
+            },
+            listState = listState
+        )
     } else {
+        android.util.Log.d("DEBUG_VM", "tablet!!!")
+
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
         Row(modifier = Modifier.fillMaxSize()) {
@@ -240,6 +278,74 @@ fun PhoneLayout(
     }
 }
 
+@Composable
+fun LandscapePhoneLayout(
+    searchQuery: String,
+    filteredRoutes: List<Route>,
+    onSearchQueryChange: (String) -> Unit,
+    isListVisible: Boolean,
+    onToggleBike: () -> Unit,
+    onToggleHiking: () -> Unit,
+    onRouteSelected: (Route) -> Unit,
+    listState: LazyGridState = rememberLazyGridState()
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Row(modifier = Modifier.fillMaxSize())
+    {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(0.3f)
+                .padding(8.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { onSearchQueryChange(it) },
+                label = { Text("Wyszukaj trasę") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        keyboardController?.hide()
+                    }
+                )
+            )
+            PrimaryButton(
+                "Trasy rowerowe",
+                onClick = onToggleBike,
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
+            PrimaryButton(
+                "Trasy piesze",
+                onClick = onToggleHiking,
+                modifier = Modifier
+                    .fillMaxWidth()
+
+            )
+        }
+
+        if (isListVisible) {
+            Box(modifier = Modifier.fillMaxSize().weight(0.7f)) {
+                RoutesList(
+                    data = filteredRoutes,
+                    onRouteSelected = onRouteSelected,
+                    listState = listState
+                )
+                SimpleVerticalScrollbar(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(2.dp),
+                    listState = listState
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun TabletLayout(
