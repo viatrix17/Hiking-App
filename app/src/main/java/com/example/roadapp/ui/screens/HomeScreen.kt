@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,6 +42,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.roadapp.model.Route
 import com.example.roadapp.ui.components.PrimaryButton
+import com.example.roadapp.ui.components.SimpleVerticalScrollbar
 import com.example.roadapp.viewmodel.RouteViewModel
 import com.example.roadapp.viewmodel.TimerViewModel
 
@@ -48,13 +51,16 @@ fun MainScreen(
     onRouteSelected: (String) -> Unit,
     viewModel: RouteViewModel,
     timerViewModel: TimerViewModel) {
-//    val routes by viewModel.currentRoutes.collectAsState()
+
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredRoutes by viewModel.filteredRoutes.collectAsState()
+    val listState = rememberLazyGridState()
+
     var isListVisible by rememberSaveable { mutableStateOf(true) }
     var activeFilterType by rememberSaveable { mutableStateOf<String?>(null) }
 
     var selectedRoute by remember { mutableStateOf<Route?>(null) }
+
 
     LaunchedEffect(Unit) {
         if(filteredRoutes.isEmpty()) {
@@ -85,7 +91,8 @@ fun MainScreen(
                 },
                 onRouteSelected = { route ->
                     onRouteSelected(route.name)
-                }
+                },
+                listState = listState
             )
         } else {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -113,7 +120,8 @@ fun MainScreen(
                         },
                         onRouteSelected = { route ->
                             selectedRoute = route
-                        }
+                        },
+                        listState = listState
                     )
                 }
 
@@ -142,7 +150,8 @@ fun PhoneLayout(
     isListVisible: Boolean,
     onToggleBike: () -> Unit,
     onToggleHiking: () -> Unit,
-    onRouteSelected: (Route) -> Unit
+    onRouteSelected: (Route) -> Unit,
+    listState: LazyGridState = rememberLazyGridState()
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -185,13 +194,23 @@ fun PhoneLayout(
         }
 
         if (isListVisible) {
-            RoutesList(
-                data = filteredRoutes,
-                onRouteSelected = onRouteSelected
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                RoutesList(
+                    data = filteredRoutes,
+                    onRouteSelected = onRouteSelected,
+                    listState = listState
+                )
+                SimpleVerticalScrollbar(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(2.dp),
+                    listState = listState
+                )
+            }
         }
     }
 }
+
 
 @Composable
 fun TabletLayout(
@@ -201,7 +220,8 @@ fun TabletLayout(
     isListVisible: Boolean,
     onToggleBike: () -> Unit,
     onToggleHiking: () -> Unit,
-    onRouteSelected: (Route) -> Unit
+    onRouteSelected: (Route) -> Unit,
+    listState: LazyGridState = rememberLazyGridState()
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -221,7 +241,7 @@ fun TabletLayout(
 
         Column(
             modifier = Modifier
-                .weight(1f) // Zajmuje całą pozostałą szerokość
+                .weight(1f)
                 .padding(16.dp)
         ) {
             OutlinedTextField(
@@ -239,10 +259,19 @@ fun TabletLayout(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (isListVisible) {
-                RoutesList(
-                    data = filteredRoutes,
-                    onRouteSelected = onRouteSelected
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    RoutesList(
+                        data = filteredRoutes,
+                        onRouteSelected = onRouteSelected,
+                        listState = listState
+                    )
+                    SimpleVerticalScrollbar(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(2.dp),
+                        listState = listState
+                    )
+                }
             }
         }
     }
