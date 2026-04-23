@@ -62,7 +62,10 @@ class RouteViewModel : ViewModel() {
                 withContext(Dispatchers.Main) {
                     allBikeRoutesFromApi = bikeRoutes
                     allHikingRoutesFromApi = hikingRoutes
-                    _allRoutes.value = bikeRoutes + hikingRoutes
+                    val allRoutes = bikeRoutes + hikingRoutes
+
+                    _allRoutes.value = allRoutes
+                    _currentRoutes.value = allRoutes
                 }
             } catch (e: Exception) {
                 android.util.Log.e("DEBUG_VM", "Błąd pobierania danych: ${e.message}", e)
@@ -71,6 +74,10 @@ class RouteViewModel : ViewModel() {
         }
     }
 
+    fun selectAllRoutes() {
+        _currentRoutes.value = allBikeRoutesFromApi + allHikingRoutesFromApi
+        _searchQuery.value = ""
+    }
     fun selectBikeRoutes() {
         android.util.Log.d("DEBUG_VM", "Wszystkie trasy w pamięci: ${allBikeRoutesFromApi.size}")
         android.util.Log.d("DEBUG_VM", "Wciśnięto Rower! Filtruję...")

@@ -19,19 +19,29 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,6 +55,8 @@ import com.example.roadapp.ui.components.PrimaryButton
 import com.example.roadapp.ui.components.SimpleVerticalScrollbar
 import com.example.roadapp.viewmodel.RouteViewModel
 import com.example.roadapp.viewmodel.TimerViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
@@ -76,18 +88,24 @@ fun MainScreen(
                 onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
                 isListVisible = isListVisible,
                 onToggleBike = {
-                    if (isListVisible && activeFilterType == "bike") isListVisible = false
-                    else {
-                        viewModel.selectBikeRoutes(); activeFilterType = "bike"; isListVisible =
-                            true
+                    if (isListVisible && activeFilterType == "bike") {
+                        viewModel.selectAllRoutes()
+                        activeFilterType = null
                     }
+                    else {
+                        viewModel.selectBikeRoutes(); activeFilterType = "bike";
+                    }
+                    isListVisible = true
                 },
                 onToggleHiking = {
-                    if (isListVisible && activeFilterType == "hiking") isListVisible = false
-                    else {
-                        viewModel.selectHikingRoutes(); activeFilterType = "hiking"; isListVisible =
-                            true
+                    if (isListVisible && activeFilterType == "hiking") {
+                        viewModel.selectAllRoutes()
+                        activeFilterType = null
                     }
+                    else {
+                        viewModel.selectHikingRoutes(); activeFilterType = "hiking";
+                    }
+                    isListVisible = true
                 },
                 onRouteSelected = { route ->
                     onRouteSelected(route.name)
@@ -95,6 +113,8 @@ fun MainScreen(
                 listState = listState
             )
         } else {
+            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+            val scope = rememberCoroutineScope()
             Row(modifier = Modifier.fillMaxSize()) {
                 Box(modifier = Modifier.weight(0.4f)) {
                     TabletLayout(
@@ -103,25 +123,35 @@ fun MainScreen(
                         onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
                         isListVisible = isListVisible,
                         onToggleBike = {
-                            if (isListVisible && activeFilterType == "bike") isListVisible = false
+                            if (isListVisible && activeFilterType == "bike") {
+                                viewModel.selectAllRoutes()
+                                activeFilterType = null
+                            }
                             else {
                                 viewModel.selectBikeRoutes(); activeFilterType =
-                                    "bike"; isListVisible =
-                                    true
+                                    "bike";
                             }
+                            isListVisible = true
+
                         },
                         onToggleHiking = {
-                            if (isListVisible && activeFilterType == "hiking") isListVisible = false
+                            if (isListVisible && activeFilterType == "hiking") {
+                                viewModel.selectAllRoutes()
+                                activeFilterType = null
+                            }
                             else {
                                 viewModel.selectHikingRoutes(); activeFilterType =
-                                    "hiking"; isListVisible =
-                                    true
+                                    "hiking";
                             }
+                            isListVisible = true
                         },
                         onRouteSelected = { route ->
                             selectedRoute = route
                         },
-                        listState = listState
+                        listState = listState,
+                        drawerState = drawerState,
+                        scope = scope,
+                        activeFilterType = activeFilterType
                     )
                 }
 
@@ -221,40 +251,66 @@ fun TabletLayout(
     onToggleBike: () -> Unit,
     onToggleHiking: () -> Unit,
     onRouteSelected: (Route) -> Unit,
-    listState: LazyGridState = rememberLazyGridState()
+    listState: LazyGridState = rememberLazyGridState(),
+    drawerState: DrawerState,
+    scope: CoroutineScope,
+    activeFilterType: String?
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    Row(modifier = Modifier.fillMaxSize()) {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(modifier = Modifier.width(200.dp)) {
+                Column(modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)) {
+                    Text("Wybierz trasę", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 8.dp), style = MaterialTheme.typography.titleMedium)
 
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .width(200.dp)
-        ) {
-            PrimaryButton("Trasy rowerowe", onClick = onToggleBike)
-            Spacer(modifier = Modifier.height(8.dp))
-            PrimaryButton("Trasy piesze", onClick = onToggleHiking)
+                    NavigationDrawerItem(
+                        label = { Text("Trasy rowerowe") },
+                        selected = (activeFilterType == "bike"),
+                        onClick = {
+                            onToggleBike()
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        label = { Text("Trasy piesze") },
+                        selected = (activeFilterType == "hiking"),
+                        onClick = {
+                            onToggleHiking()
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                }
+            }
         }
-
-        VerticalDivider(thickness = 1.dp, color = Color.LightGray)
-
+    ) {
         Column(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxSize()
                 .padding(16.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { onSearchQueryChange(it) },
-                label = { Text("Wyszukaj trasę") },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = { keyboardController?.hide() }
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                    Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    label = { Text("Wyszukaj trasę") },
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
                 )
-            )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
