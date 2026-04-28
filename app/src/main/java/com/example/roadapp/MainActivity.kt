@@ -5,6 +5,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -80,54 +84,63 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                Scaffold(
-                    containerColor = Color.Transparent,
-                    topBar = {
-                        if (currentRoute != "welcome") {
-                            CenterAlignedTopAppBar(
-                                title = {
-                                    Text(text = topBarTitle)
-                                },
-                                colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                                ),
-                                navigationIcon = {
-                                    if (currentRoute != "home") {
-                                        ReturnButton(
-                                            onClick = { navController.popBackStack() },
-                                            modifier = Modifier.padding(8.dp)
-                                        )
-                                    }
-                                },
-                                actions = {
-                                    IconButton(onClick = {
-                                        scope.launch {
-                                            PreferencesManager.saveDarkMode(context, !isDarkTheme)
+                    Scaffold(
+                        containerColor = Color.Transparent,
+                        topBar = {
+                            AnimatedVisibility(
+                                visible = currentRoute != "welcome",
+                                enter = fadeIn(animationSpec = tween(500, delayMillis = 300)),
+                                exit = fadeOut(animationSpec = tween(300))
+                            ) {
+                            if (currentRoute != "welcome" && currentRoute != null) {
+                                CenterAlignedTopAppBar(
+                                    title = {
+                                        Text(text = topBarTitle)
+                                    },
+                                    colors = TopAppBarDefaults.topAppBarColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                    navigationIcon = {
+                                        if (currentRoute != "home") {
+                                            ReturnButton(
+                                                onClick = { navController.popBackStack() },
+                                                modifier = Modifier.padding(8.dp)
+                                            )
                                         }
-                                    }) {
-                                        Icon(
-                                            imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                                            contentDescription = if (isDarkTheme) "Włącz tryb jasny" else "Włącz tryb ciemny",
-                                            tint = MaterialTheme.colorScheme.onPrimary
-                                        )
+                                    },
+                                    actions = {
+                                        IconButton(onClick = {
+                                            scope.launch {
+                                                PreferencesManager.saveDarkMode(
+                                                    context,
+                                                    !isDarkTheme
+                                                )
+                                            }
+                                        }) {
+                                            Icon(
+                                                imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                                                contentDescription = if (isDarkTheme) "Włącz tryb jasny" else "Włącz tryb ciemny",
+                                                tint = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        }
                                     }
-                                }
 
-                            )
+                                )
+                            }
+                            }
                         }
+                    ) { innerPadding ->
+                        RoadAppNavHost(
+                            navController = navController,
+                            isDarkTheme = isDarkTheme,
+                            isTablet = isTablet,
+                            viewModel = viewModel,
+                            timerViewModel = timerViewModel,
+                            modifier = Modifier.padding(innerPadding)
+                        )
                     }
-                ) { innerPadding ->
-                    RoadAppNavHost(
-                        navController = navController,
-                        isDarkTheme = isDarkTheme,
-                        isTablet = isTablet,
-                        viewModel = viewModel,
-                        timerViewModel = timerViewModel,
-                        modifier = Modifier.padding(innerPadding)
-                    )
                 }
-            }
             }
         }
     }
