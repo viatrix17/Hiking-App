@@ -118,7 +118,7 @@ fun MainScreen(
             },
             listState = listState
         )
-    } else if (isLandscape) {
+    } else if (isLandscape && !isTablet) {
         android.util.Log.d("DEBUG_VM", "Obrót main!!!")
 
         LandscapePhoneLayout(
@@ -149,7 +149,7 @@ fun MainScreen(
             },
             listState = listState
         )
-    } else {
+    } else if (isTablet){
         android.util.Log.d("DEBUG_VM", "tablet!!!")
 
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

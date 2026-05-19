@@ -16,11 +16,8 @@ abstract class RoadAppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: RoadAppDatabase? = null
 
-        // Definicja migracji wewnątrz companion object
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Tu dodajesz kod SQL, np.:
-                // database.execSQL("ALTER TABLE route_results ADD COLUMN someColumn INTEGER DEFAULT 0 NOT NULL")
             }
         }
 
@@ -31,7 +28,6 @@ abstract class RoadAppDatabase : RoomDatabase() {
                     RoadAppDatabase::class.java,
                     "road_database"
                 )
-                    // TO JEST KLUCZOWE DLA TESTÓW:
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }
